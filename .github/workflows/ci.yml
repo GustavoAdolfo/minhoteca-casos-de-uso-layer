@@ -13,6 +13,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: read
+
     strategy:
       matrix:
         node-version: [24.x]
@@ -25,9 +29,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+          registry-url: 'https://npm.pkg.github.com'
 
       - name: Install dependencies
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run linter
         run: npm run lint
@@ -83,6 +90,7 @@ jobs:
     permissions:
       id-token: write # Necessário para interagir com o OIDC da AWS
       contents: read
+      packages: read
 
     defaults:
       run:
@@ -98,6 +106,7 @@ jobs:
         with:
           node-version: '24.x'
           cache: 'npm'
+          registry-url: 'https://npm.pkg.github.com'
 
       - name: Configurar Credenciais da AWS via OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -122,3 +131,5 @@ jobs:
       - name: Terraform Apply
         # O auto-approve é essencial em ambientes de CI/CD pois não há interação humana
         run: terraform apply -auto-approve tfplan
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
