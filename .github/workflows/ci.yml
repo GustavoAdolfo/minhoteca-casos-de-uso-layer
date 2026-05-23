@@ -1,38 +1,33 @@
-name: Release
+name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  release:
+  build-and-test:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
-      packages: write
-      pull-requests: write
+      contents: read
+      packages: read
+
+    strategy:
+      matrix:
+        node-version: [24.x]
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-          token: ${{ secrets.RELEASE_PAT }}
 
-      - name: Setup Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Use Node.js 24.x
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: '24.x'
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@gustavoadolfo'
@@ -47,72 +42,113 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm test
+        run: npm test -- --coverage
 
       - name: Build
         run: npm run build
 
-      - name: Check and Bump Version
-        id: version
-        run: |
-          # Obtém a versão do package.json antes do merge e a versão atual
-          PREV_VERSION=$(git show HEAD~1:package.json | jq -r .version)
-          CURR_VERSION=$(jq -r .version package.json)
-
-          if [ "$PREV_VERSION" != "$CURR_VERSION" ]; then
-            echo "Versão alterada manualmente no PR (de $PREV_VERSION para $CURR_VERSION). Pulando bump automático de patch."
-            # Cria a tag anotada localmente para a versão manual (o '|| true' previne erro se a tag já existir)
-            git tag -a "v$CURR_VERSION" -m "chore(release): $CURR_VERSION [skip ci]" || true
-            echo "tag_name=v$CURR_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "Nenhuma alteração de versão detectada. Realizando bump de patch automático..."
-            
-            while true; do
-              # Faz o bump apenas nos arquivos, sem commitar nem criar tag ainda
-              NEW_VERSION=$(npm version patch --no-git-tag-version)
-              
-              if git show-ref --tags --verify --quiet "refs/tags/$NEW_VERSION"; then
-                echo "⚠️ A tag $NEW_VERSION já existe (provavelmente de uma falha anterior). Incrementando novamente..."
-              else
-                echo "✅ Versão $NEW_VERSION disponível. Criando commit e tag..."
-                git commit -am "chore(release): ${NEW_VERSION#v} [skip ci]"
-                git tag -a "$NEW_VERSION" -m "chore(release): ${NEW_VERSION#v} [skip ci]"
-                echo "tag_name=$NEW_VERSION" >> $GITHUB_OUTPUT
-                break
-              fi
-            done
-          fi
-
-      - name: Publish to GitHub Packages
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push version bump
-        run: |
-          git push origin main
-          git push origin ${{ steps.version.outputs.tag_name }}
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
         with:
-          tag_name: ${{ steps.version.outputs.tag_name }}
-          name: Release ${{ steps.version.outputs.tag_name }}
-          generate_release_notes: true
-          body: |
-            Changes in this Release
-            - See CHANGELOG.md for detailed information
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-umbrella
 
-      - name: Sync develop with main
+  create-pr-to-main:
+    name: 'Create PR to Main'
+    needs: build-and-test # Garante que o PR só será aberto se o build e os testes passarem
+    runs-on: ubuntu-latest
+    # Executa este job SOMENTE quando houver um push/merge na branch develop
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    permissions:
+      pull-requests: write # Permissão necessária para o bot do GitHub abrir o PR
+      contents: read
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necessário para obter o histórico da branch main
+
+      - name: Create Pull Request via GitHub CLI
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Tenta criar um PR da main para a develop
-          PR_EXISTS=$(gh pr list --base develop --head main --state open --json number -q 'length')
+          git fetch origin main
+          MAIN_VERSION=$(git show origin/main:package.json | jq -r .version)
+          DEV_VERSION=$(jq -r .version package.json)
 
-          if [ "$PR_EXISTS" -eq "0" ]; then
-            gh pr create --base develop --head main --title "🔄 chore: Sincronizar \`develop\` com \`main\` após release" --body "Sincronização automática pós-release para garantir que a \`develop\` esteja atualizada com a versão e changelog recém-publicados na \`main\`."
+          echo "Versão na main: $MAIN_VERSION"
+          echo "Versão na develop: $DEV_VERSION"
+
+          # sort -V ordena as versões. Se MAIN_VERSION for a menor (ou igual), então DEV_VERSION >= MAIN_VERSION
+          if [ "$(printf '%s\n' "$MAIN_VERSION" "$DEV_VERSION" | sort -V | head -n1)" = "$MAIN_VERSION" ]; then
+            # Verifica se existem modificações reais na develop em relação ao que já está na main
+            CHANGED_FILES=$(git diff origin/main...HEAD --name-only)
+            
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "A branch develop está perfeitamente sincronizada com a main. Não há novas modificações. O PR automático não será criado para evitar loop."
+            else
+              PR_EXISTS=$(gh pr list --base main --head develop --state open --json number -q 'length')
+
+              if [ "$PR_EXISTS" -eq "0" ]; then
+                gh pr create --base main --head develop --title "🚀 Release: Atualização da \`main\` a partir da \`develop\`" --body "Este Pull Request foi aberto automaticamente após os testes passarem com sucesso na branch \`develop\`.\n\n**Versão detectada em develop:** \`$DEV_VERSION\`\n**Versão atual em main:** \`$MAIN_VERSION\`\n\nRevise as alterações e aprove para promover para produção."
+              else
+                echo "Já existe um Pull Request aberto de develop para main. Nenhuma ação adicional necessária."
+              fi
+            fi
           else
-            echo "Já existe um PR aberto para sincronizar a main com a develop."
+            echo "A versão na develop ($DEV_VERSION) é menor que a versão na main ($MAIN_VERSION). Não será aberto um Pull Request automático."
           fi
+
+  terraform:
+    name: 'Terraform Deploy'
+    needs: build-and-test # Garante que o deploy só rode se os testes passarem
+    runs-on: ubuntu-latest
+    # Executa este job SOMENTE quando houver um push na branch main
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      id-token: write # Necessário para interagir com o OIDC da AWS
+      contents: read
+
+    defaults:
+      run:
+        # Define o diretório onde os comandos do Terraform serão executados
+        working-directory: terraform/envs/prod
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (Necessário para o local-exec da Layer)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - name: Configurar Credenciais da AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionMinhoteca
+          aws-region: us-east-1
+          role-session-name: GitHubActionsTerraformDeploy
+          disable-retry: true
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init -backend-config=default.conf
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        # O auto-approve é essencial em ambientes de CI/CD pois não há interação humana
+        run: terraform apply -auto-approve tfplan
