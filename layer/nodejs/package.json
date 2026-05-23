@@ -1,12 +1,28 @@
 {
   "name": "@gustavoadolfo/minhoteca-casos-de-uso-layer",
   "description": "Camada de negócios e casos de uso da Minhoteca",
-  "main": "layer/nodejs/dist/index.js",
-  "types": "layer/nodejs/dist/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "layer/nodejs/dist",
+    "dist",
     "README.md",
     "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "lint:staged": "lint-staged",
+    "format": "prettier --write \"**/*.{js,ts,md,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,md,json,yml,yaml}\""
+  },
+  "keywords": [
+    "minhoteca",
+    "biblioteca",
+    "comunidade"
   ],
   "repository": {
     "type": "git",
@@ -18,26 +34,6 @@
     "url": "https://github.com/GustavoAdolfo/minhoteca-casos-de-uso-layer/issues"
   },
   "homepage": "https://github.com/GustavoAdolfo/minhoteca-casos-de-uso-layer#readme",
-  "scripts": {
-    "build": "cd layer/nodejs && tsc && tsc-alias",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest tests/unit",
-    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest tests/integration",
-    "test:all": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest tests/unit --coverage",
-    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest tests/unit --watch",
-    "lint": "eslint layer/nodejs/src tests --ext .ts",
-    "lint:fix": "eslint layer/nodejs/src tests --ext .ts --fix",
-    "lint:staged": "lint-staged",
-    "format": "prettier --write \"**/*.{js,ts,md,json,yml,yaml}\"",
-    "format:check": "prettier --check \"**/*.{js,ts,md,json,yml,yaml}\"",
-    "clean": "rm -rf layer/nodejs/dist coverage",
-    "prepare": "husky"
-  },
-  "keywords": [
-    "minhoteca",
-    "biblioteca",
-    "comunidade"
-  ],
   "author": "Gustavo Adolfo",
   "engines": {
     "node": ">=24.0.0"

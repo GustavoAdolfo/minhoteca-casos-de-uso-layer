@@ -35,11 +35,13 @@ jobs:
           node-version: '24.x'
           cache: 'npm'
           registry-url: 'https://npm.pkg.github.com'
+          scope: '@gustavoadolfo'
 
       - name: Install dependencies
         run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run linter
         run: npm run lint
@@ -85,6 +87,7 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push version bump
         run: |
@@ -105,11 +108,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Tenta criar um PR da main para a develop
           PR_EXISTS=$(gh pr list --base develop --head main --state open --json number -q 'length')
 
           if [ "$PR_EXISTS" -eq "0" ]; then
-            gh pr create --base develop --head main --title "🔄 chore: Sincronizar \`develop\` com \`main\` após release" --body "Sincronização automática pós-release para garantir que a \`develop\` esteja atualizada com a versão e changelog recém-publicados na \`main\`."
+            gh pr create --base develop --head main --title "🔄 chore: Sincronizar \`develop\` com \`main\` após release" --body "Sincronização automática pós-release para garantir que a \`develop\` esteja atualizada com a versão (e possível changelog) recém-publicada na \`main\`."
           else
             echo "Já existe um PR aberto para sincronizar a main com a develop."
           fi
