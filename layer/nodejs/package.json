@@ -1,0 +1,52 @@
+{
+  "name": "@gustavoadolfo/minhoteca-casos-de-uso-layer",
+  "description": "Camada de negócios e casos de uso da Minhoteca",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "lint:staged": "lint-staged",
+    "format": "prettier --write \"**/*.{js,ts,md,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,md,json,yml,yaml}\""
+  },
+  "keywords": [
+    "minhoteca",
+    "biblioteca",
+    "comunidade"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GustavoAdolfo/minhoteca-casos-de-uso-layer.git"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/GustavoAdolfo/minhoteca-casos-de-uso-layer/issues"
+  },
+  "homepage": "https://github.com/GustavoAdolfo/minhoteca-casos-de-uso-layer#readme",
+  "author": "Gustavo Adolfo",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "lint-staged": {
+    "*.{js,ts,json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "{layer/nodejs/src,tests}/**/*.{ts,tsx}": [
+      "eslint --max-warnings=0 --fix"
+    ]
+  }
+}
