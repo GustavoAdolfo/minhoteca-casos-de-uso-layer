@@ -54,7 +54,8 @@
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
-    "@gustavoadolfo/minhoteca-core-layer": "^1.0.2",
+    "@gustavoadolfo/minhoteca-adapter-layer": "^0.1.0",
+    "@gustavoadolfo/minhoteca-core-layer": "^1.0.10",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.8.0",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
