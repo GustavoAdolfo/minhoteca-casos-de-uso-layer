@@ -73,24 +73,24 @@ describe('ExcluirEditoraUseCase', () => {
     expect(result.Message).toBe('Editora excluída com sucesso.');
   });
 
-  it('deve utilizar string vazia para o id quando queryStringParameters for null (branch coverage)', async () => {
+  it('deve retornar erro quando queryStringParameters for null (branch coverage)', async () => {
     repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
     const useCase = new ExcluirEditoraUseCase(repoMock);
 
     const event = createEvent(null);
-    await useCase.execute(event);
-
-    expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Editoras', '');
+    await expect(useCase.execute(event)).rejects.toThrow(
+      'ID da editora é obrigatório para exclusão.'
+    );
   });
 
-  it('deve utilizar string vazia para o id quando o id não estiver presente no queryStringParameters (branch coverage)', async () => {
+  it('deve retornar erro quando o id não estiver presente no queryStringParameters (branch coverage)', async () => {
     repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
     const useCase = new ExcluirEditoraUseCase(repoMock);
 
     const event = createEvent({ outroParametro: 'abc' });
-    await useCase.execute(event);
-
-    expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Editoras', '');
+    await expect(useCase.execute(event)).rejects.toThrow(
+      'ID da editora é obrigatório para exclusão.'
+    );
   });
 
   it('deve utilizar o nome da tabela das variáveis de ambiente se estiver definida (branch coverage)', async () => {
