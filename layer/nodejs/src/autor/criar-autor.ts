@@ -15,10 +15,10 @@ export class CriarAutorUseCase implements UseCaseInterface {
 
   constructor(private _repository: RepositoryInterface) {
     this._tabelaAutores = process.env.TABELA_AUTORES || 'Autores';
-    this.logService.info('🏁 Iniciando caso de uso de criar autor.');
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
+    this.logService.info('Iniciando caso de uso de criar autor.');
     try {
       const body = JSON.parse(data.body ?? '{}');
       this.logService.info('Dados recebidos para gravação', {}, { body });

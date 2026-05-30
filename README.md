@@ -21,15 +21,15 @@ Minhoteca tem como missão facilitar o acesso gratuito à leitura, gestão de em
 
 ## ✨ Funcionalidades
 
-- Casos de Uso (Use Cases) padronizados e reutilizáveis (ex: Editora, Autor, Livro).
+- Casos de Uso (Use Cases) padronizados e reutilizáveis para `Editora`, `Autor`, `Livro` e `Pais`.
 - Implementação de regras de negócio centrais, agnósticas a frameworks de entrega.
 - Funções utilitárias de paginação e padronização de respostas para API (`createResult`).
 - Tratamento estruturado de logs via integração com a `core-layer`.
 - Total integração para implantação automatizada na AWS via **Terraform** como um Lambda Layer.
-- Cobertura abrangente de testes unitários.
+- Cobertura abrangente de testes unitários com Jest.
 - **CI/CD Automatizado:** Build, testes e deploy via GitHub Actions.
 - **Pronto para AWS Lambda Layers:** Documentação completa de deployment.
-- Versão `0.2.0` com novos casos de uso de `Autor` e refinamentos nos casos de uso de `Editora`.
+- Versão `0.2.0` com casos de uso completos de `Autor` e melhorias de teste/consistência para `Editora`.
 
 ## 🚀 Começar Rápido
 
