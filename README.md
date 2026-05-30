@@ -29,6 +29,7 @@ Minhoteca tem como missão facilitar o acesso gratuito à leitura, gestão de em
 - Cobertura abrangente de testes unitários.
 - **CI/CD Automatizado:** Build, testes e deploy via GitHub Actions.
 - **Pronto para AWS Lambda Layers:** Documentação completa de deployment.
+- Versão `0.2.0` com novos casos de uso de `Autor` e refinamentos nos casos de uso de `Editora`.
 
 ## 🚀 Começar Rápido
 
@@ -49,6 +50,8 @@ A hierarquia do projeto está segmentada da seguinte forma:
 minhoteca-casos-de-uso-layer/
 ├── layer/nodejs/src/    # Código-fonte principal empacotado para a AWS Lambda
 │   ├── editora/         # Use Cases de Editora (Alterar, Excluir, Listar, Obter)
+│   ├── autor/           # Use Cases de Autor (Alterar, Excluir, Listar, Obter)
+│   ├── pais/            # Use Cases de País
 │   └── util/            # Helpers e Utilitários (ex: processamento de Results)
 ├── tests/               # Testes unitários com a suíte Jest espelhando a raiz
 ├── terraform/           # Scripts para criação de infraestrutura na AWS

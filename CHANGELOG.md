@@ -19,17 +19,27 @@ e este projeto segue [Semantic Versioning](https://semver.org/).
 - Documentação do projeto atualizada.
 - Refatoração de código e ajustes pós-testes.
 
+## [0.4.0] - Planned
+
+### Added
+
+- Implementação dos casos de uso para a entidade `País`.
+
 ## [0.3.0] - Planned
 
 ### Added
 
 - Implementação dos casos de uso para a entidade `Livro`.
 
-## [0.2.0] - Planned
+## [0.2.0] - 2026-05-30
 
 ### Added
 
-- Implementação dos casos de uso para a entidade `Autor`.
+- Casos de uso completos para a entidade `Autor`, incluindo criar, alterar, excluir, listar e obter.
+
+### Changed
+
+- Ajustes de refatoração nos casos de uso de `Editora` para melhorar consistência de tratamento e testes.
 
 ## [0.1.0] - 2024-12-10
 

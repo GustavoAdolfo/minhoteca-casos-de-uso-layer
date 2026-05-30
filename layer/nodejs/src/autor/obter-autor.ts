@@ -71,6 +71,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
               } as LivroDTO;
             });
           }
+
           return createResult([autor], 200, 'Autor obtido com sucesso.');
         }
 

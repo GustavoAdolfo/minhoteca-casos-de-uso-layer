@@ -1,5 +1,6 @@
 import { ObterAutorUseCase } from '../../../layer/nodejs/src/autor/obter-autor';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
+import { AutorDTO, LivroDTO } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 
 // Mock parcial do core-layer (acompanhando o padrão de outros testes)
@@ -12,6 +13,16 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
       error: jest.fn(),
       warn: jest.fn(),
     })),
+    LivroAdapter: {
+      toDTOList: jest.fn((livros) =>
+        livros.map((livro: LivroDTO) => ({
+          id: livro.id,
+          titulo: livro.titulo,
+          subtitulo: livro.subtitulo,
+          imagemCapaUrl: livro.imagemCapaUrl,
+        }))
+      ),
+    },
   };
 });
 
@@ -159,5 +170,120 @@ describe('ObterAutorUseCase', () => {
     } finally {
       process.env.TABELA_AUTORES = originalEnv;
     }
+  });
+
+  it('deve obter um autor com livros associados quando houver registros na tabela de Livros', async () => {
+    const mockAutor: ResultType = {
+      data: [autorMockData],
+      limit: 1,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+
+    const mockLivros: ResultType = {
+      data: [
+        {
+          id: 'livro-1',
+          titulo: 'Livro Test 1',
+          subtitulo: 'Subtitulo 1',
+          imagemCapaUrl: 'http://example.com/capa1.jpg',
+          autorId: '1234567890',
+        },
+        {
+          id: 'livro-2',
+          titulo: 'Livro Test 2',
+          subtitulo: 'Subtitulo 2',
+          imagemCapaUrl: 'http://example.com/capa2.jpg',
+          autorId: '1234567890',
+        },
+      ],
+      limit: 1000,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 2,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+
+    repoMock.queryData.mockResolvedValueOnce(mockAutor);
+    repoMock.getAll.mockResolvedValueOnce(mockLivros);
+
+    const useCase = new ObterAutorUseCase(repoMock);
+    const event = createEvent({ id: '1234567890' });
+
+    const result = await useCase.execute(event);
+
+    expect(repoMock.getAll).toHaveBeenCalledWith('Livros', {
+      filterKey: 'autorId',
+      filterValue: '1234567890',
+      limit: 1000,
+    });
+    expect(result.Code).toBe(200);
+    expect(result.PageData).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          nome: 'autor-mock-name',
+          livros: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'livro-1',
+              titulo: 'Livro Test 1',
+              subtitulo: 'Subtitulo 1',
+              imagemCapaUrl: 'http://example.com/capa1.jpg',
+            }),
+            expect.objectContaining({
+              id: 'livro-2',
+              titulo: 'Livro Test 2',
+              subtitulo: 'Subtitulo 2',
+              imagemCapaUrl: 'http://example.com/capa2.jpg',
+            }),
+          ]),
+        }),
+      ])
+    );
+  });
+
+  it('deve obter um autor sem a propriedade livros quando nenhum livro for encontrado', async () => {
+    const mockAutor: ResultType = {
+      data: [autorMockData],
+      limit: 1,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+
+    const mockLivrosVazio: ResultType = {
+      data: [],
+      limit: 1000,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+
+    repoMock.queryData.mockResolvedValueOnce(mockAutor);
+    repoMock.getAll.mockResolvedValueOnce(mockLivrosVazio);
+
+    const useCase = new ObterAutorUseCase(repoMock);
+    const event = createEvent({ id: '1234567890' });
+
+    const result = await useCase.execute(event);
+
+    expect(repoMock.getAll).toHaveBeenCalledWith('Livros', {
+      filterKey: 'autorId',
+      filterValue: '1234567890',
+      limit: 1000,
+    });
+    expect(result.Code).toBe(200);
+    // Verifica que author foi retornado
+    expect(result.PageData?.[0]).toBeDefined();
+    expect(result.PageData?.[0]).toHaveProperty('nome', 'autor-mock-name');
+    // Verifica que livros é undefined quando não há registros
+    expect((result.PageData?.[0] as unknown as AutorDTO).livros).toBeUndefined();
   });
 });
