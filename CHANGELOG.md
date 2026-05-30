@@ -11,6 +11,11 @@ e este projeto segue [Semantic Versioning](https://semver.org/).
 
 - Implementação dos casos de uso para a entidade `Pais`.
 
+### Changed
+
+- Atualização da documentação no README e CHANGELOG para refletir o estado atual do projeto.
+- Melhorias na descrição dos casos de uso de `Autor`, `Livro` e `Editora`.
+
 ## [1.0.0] - Planned
 
 ### Changed
