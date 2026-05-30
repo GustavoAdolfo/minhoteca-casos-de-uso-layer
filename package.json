@@ -1,7 +1,7 @@
 {
   "name": "@gustavoadolfo/minhoteca-casos-de-uso-layer",
   "description": "Camada de negócios e casos de uso da Minhoteca",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "main": "layer/nodejs/dist/index.js",
   "types": "layer/nodejs/dist/index.d.ts",
   "files": [
