@@ -71,7 +71,7 @@ describe('ObterAutorUseCase', () => {
       queryStringParameters,
     }) as unknown as APIGatewayEvent;
 
-  it('deve obter uma editora com sucesso utilizando pathParameters', async () => {
+  it('deve obter um autor com sucesso utilizando pathParameters', async () => {
     const mockResult: ResultType = {
       data: [autorMockData],
       limit: 1,
@@ -103,7 +103,7 @@ describe('ObterAutorUseCase', () => {
     );
   });
 
-  it('deve obter uma editora com sucesso utilizando queryStringParameters (fallback de id)', async () => {
+  it('deve obter um autor com sucesso utilizando queryStringParameters (fallback de id)', async () => {
     const mockResult: ResultType = {
       data: [autorMockData],
       limit: 1,
