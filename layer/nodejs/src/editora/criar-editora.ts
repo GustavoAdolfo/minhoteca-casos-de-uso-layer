@@ -16,7 +16,7 @@ export class CriarEditoraUseCase implements UseCaseInterface {
    *
    */
   constructor(private _repository: RepositoryInterface) {
-    this._tableName = process.env.EDITORA_TABLE_NAME || 'Editoras';
+    this._tableName = process.env.TABELA_EDITORAS || 'Editoras';
     this.logService.info('🏁 Iniciando caso de uso de criar editora.');
   }
 

@@ -1,6 +1,6 @@
-import { ListarEditoraUseCase } from '../../../layer/nodejs/src/editora/listar-editoras';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
+import { ListarAutorUseCase } from '../../../layer/nodejs/src/autor';
 
 // Realiza o mock parcial da camada core para consistência com outros testes
 jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
@@ -15,14 +15,14 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
   };
 });
 
-describe('ListarEditoraUseCase', () => {
+describe('ListarAutorUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
   let consoleErrorSpy: jest.SpyInstance;
 
-  const editoraMockData = {
+  const autorMockData = {
     id: '1234567890',
-    nome: 'Editora Mock Name',
-    email: 'mock@editora.net',
+    nome: 'Autor Mock Name',
+    email: 'mock@autor.net',
     website: 'http://mock-website.com',
     pais: 'BRA',
   };
@@ -58,9 +58,9 @@ describe('ListarEditoraUseCase', () => {
       queryStringParameters,
     }) as unknown as APIGatewayEvent;
 
-  it('deve listar editoras com paginação padrão quando queryStringParameters é null', async () => {
+  it('deve listar autores com paginação padrão quando queryStringParameters é null', async () => {
     const mockResult: ResultType = {
-      data: [editoraMockData],
+      data: [autorMockData],
       limit: 10,
       currentPage: 1,
       totalPages: 1,
@@ -70,25 +70,25 @@ describe('ListarEditoraUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock);
+    const useCase = new ListarAutorUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
-    expect(repoMock.getAll).toHaveBeenCalledWith('Editoras', {
+    expect(repoMock.getAll).toHaveBeenCalledWith('Autores', {
       page: 1,
       limit: 10,
       sortBy: 'nome',
       sortOrder: 'asc',
     });
     expect(result.Code).toBe(200);
-    expect(result.Message).toBe('Editoras listadas com sucesso');
+    expect(result.Message).toBe('Autores listados com sucesso');
     expect(result.PageData).toEqual(
-      expect.arrayContaining([expect.objectContaining({ nome: 'Editora Mock Name' })])
+      expect.arrayContaining([expect.objectContaining({ nome: 'Autor Mock Name' })])
     );
   });
 
   it('deve usar parâmetros da query e gerar corretamente os links de next/prev page', async () => {
     const mockResult: ResultType = {
-      data: [editoraMockData],
+      data: [autorMockData],
       limit: 5,
       currentPage: 2,
       totalPages: 3,
@@ -98,11 +98,11 @@ describe('ListarEditoraUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock);
+    const useCase = new ListarAutorUseCase(repoMock);
     const event = createEvent({ page: '2', limit: '5', sortBy: 'pais', sortOrder: 'desc' });
     const result = await useCase.execute(event);
 
-    expect(repoMock.getAll).toHaveBeenCalledWith('Editoras', {
+    expect(repoMock.getAll).toHaveBeenCalledWith('Autores', {
       page: 2,
       limit: 5,
       sortBy: 'pais',
@@ -114,7 +114,7 @@ describe('ListarEditoraUseCase', () => {
 
   it('deve gerar links de next/prev omitindo sortBy e sortOrder caso sejam ignorados', async () => {
     const mockResult: ResultType = {
-      data: [editoraMockData],
+      data: [autorMockData],
       limit: 5,
       currentPage: 2,
       totalPages: 3,
@@ -124,7 +124,7 @@ describe('ListarEditoraUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock);
+    const useCase = new ListarAutorUseCase(repoMock);
     // Passando valores vazios para forçar o condicional (sortBy && sortOrder) a ser falso
     const event = createEvent({ page: '2', limit: '5', sortBy: '', sortOrder: '' });
     const result = await useCase.execute(event);
@@ -145,27 +145,27 @@ describe('ListarEditoraUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock);
+    const useCase = new ListarAutorUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     expect(result.Code).toBe(204);
-    expect(result.Message).toBe('Nenhuma editora encontrada');
+    expect(result.Message).toBe('Nenhum autor encontrado');
     expect(result.PageData).toHaveLength(0);
   });
 
   it('deve utilizar fallbacks de propriedades de paginação se o repository omitir valores (branch coverage)', async () => {
     // Omitindo propriedades como currentPage, totalDocuments, totalPages do retorno
     const mockResult = {
-      data: [editoraMockData, editoraMockData],
+      data: [autorMockData, autorMockData],
     } as ResultType;
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock);
+    const useCase = new ListarAutorUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     // Como default do useCase: page = 1
     expect(result.Page).toBe(1);
-    // Fallback = editoras.length = 2
+    // Fallback = autores.length = 2
     expect(result.TotalItems).toBe(2);
     // Fallback = 0
     expect(result.TotalPage).toBe(0);
@@ -174,15 +174,15 @@ describe('ListarEditoraUseCase', () => {
   it('deve tratar exceção de falta do id no getOwnPropertyDescriptor provendo um fallback', async () => {
     // Objeto sem a chave id para forçar `Object.getOwnPropertyDescriptor(item, 'id')` retornar undefined
     const dataSemId = {
-      nome: editoraMockData.nome,
-      email: editoraMockData.email,
-      website: editoraMockData.website,
-      pais: editoraMockData.pais,
+      nome: autorMockData.nome,
+      email: autorMockData.email,
+      website: autorMockData.website,
+      pais: autorMockData.pais,
     };
 
     repoMock.getAll.mockResolvedValueOnce({ data: [dataSemId] } as ResultType);
 
-    const useCase = new ListarEditoraUseCase(repoMock);
+    const useCase = new ListarAutorUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     expect(result.Code).toBe(200);
@@ -191,27 +191,27 @@ describe('ListarEditoraUseCase', () => {
   });
 
   it('deve utilizar o nome da tabela configurada nas variáveis de ambiente', async () => {
-    const originalEnv = process.env.TABELA_EDITORAS;
-    process.env.TABELA_EDITORAS = 'Tabela_Mock_Listar_Editoras';
+    const originalEnv = process.env.TABELA_AUTORES;
+    process.env.TABELA_AUTORES = 'Tabela_Mock_Listar_Autores';
 
     try {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
-      const useCase = new ListarEditoraUseCase(repoMock);
+      const useCase = new ListarAutorUseCase(repoMock);
 
       await useCase.execute(createEvent(null));
       expect(repoMock.getAll).toHaveBeenCalledWith(
-        'Tabela_Mock_Listar_Editoras',
+        'Tabela_Mock_Listar_Autores',
         expect.any(Object)
       );
     } finally {
-      process.env.TABELA_EDITORAS = originalEnv;
+      process.env.TABELA_AUTORES = originalEnv;
     }
   });
 
   it('deve capturar e relançar erro padrão quando ocorrer uma falha', async () => {
     repoMock.getAll.mockRejectedValueOnce(new Error('Erro interno do DB'));
 
-    const useCase = new ListarEditoraUseCase(repoMock);
-    await expect(useCase.execute(createEvent(null))).rejects.toThrow('Falha ao listar editoras.');
+    const useCase = new ListarAutorUseCase(repoMock);
+    await expect(useCase.execute(createEvent(null))).rejects.toThrow('Falha ao listar autores.');
   });
 });

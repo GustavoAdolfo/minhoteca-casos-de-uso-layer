@@ -147,8 +147,8 @@ describe('ObterEditoraUseCase', () => {
   });
 
   it('deve utilizar o nome da tabela das variáveis de ambiente se estiver definida (branch coverage)', async () => {
-    const originalEnv = process.env.EDITORA_TABLE_NAME;
-    process.env.EDITORA_TABLE_NAME = 'Tabela_Mock_Editora_Obter';
+    const originalEnv = process.env.TABELA_EDITORAS;
+    process.env.TABELA_EDITORAS = 'Tabela_Mock_Editora_Obter';
 
     try {
       repoMock.queryData.mockResolvedValueOnce({ data: [editoraMockData] } as ResultType);
@@ -160,7 +160,7 @@ describe('ObterEditoraUseCase', () => {
         expect.any(Array)
       );
     } finally {
-      process.env.EDITORA_TABLE_NAME = originalEnv;
+      process.env.TABELA_EDITORAS = originalEnv;
     }
   });
 });
