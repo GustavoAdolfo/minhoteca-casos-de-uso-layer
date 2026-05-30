@@ -191,8 +191,8 @@ describe('ListarEditoraUseCase', () => {
   });
 
   it('deve utilizar o nome da tabela configurada nas variáveis de ambiente', async () => {
-    const originalEnv = process.env.EDITORA_TABLE_NAME;
-    process.env.EDITORA_TABLE_NAME = 'Tabela_Mock_Listar_Editoras';
+    const originalEnv = process.env.TABELA_EDITORAS;
+    process.env.TABELA_EDITORAS = 'Tabela_Mock_Listar_Editoras';
 
     try {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
@@ -204,7 +204,7 @@ describe('ListarEditoraUseCase', () => {
         expect.any(Object)
       );
     } finally {
-      process.env.EDITORA_TABLE_NAME = originalEnv;
+      process.env.TABELA_EDITORAS = originalEnv;
     }
   });
 

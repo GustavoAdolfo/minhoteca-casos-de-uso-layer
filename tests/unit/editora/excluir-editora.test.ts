@@ -110,8 +110,8 @@ describe('ExcluirEditoraUseCase', () => {
   });
 
   it('deve utilizar o nome da tabela das variáveis de ambiente se estiver definida (branch coverage)', async () => {
-    const originalEnv = process.env.EDITORA_TABLE_NAME;
-    process.env.EDITORA_TABLE_NAME = 'Tabela_Mock_Editora';
+    const originalEnv = process.env.TABELA_EDITORAS;
+    process.env.TABELA_EDITORAS = 'Tabela_Mock_Editora';
 
     try {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as unknown as ResultType);
@@ -121,7 +121,7 @@ describe('ExcluirEditoraUseCase', () => {
       await useCase.execute(createEvent({ id: '999' }));
       expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Editora', '999');
     } finally {
-      process.env.EDITORA_TABLE_NAME = originalEnv;
+      process.env.TABELA_EDITORAS = originalEnv;
     }
   });
 
