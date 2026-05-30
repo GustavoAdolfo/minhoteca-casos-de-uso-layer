@@ -1,33 +1,29 @@
 import {
-  Editora,
-  EditoraAdapter,
-  EditoraDTO,
+  Autor,
+  AutorAdapter,
+  AutorDTO,
   UseCaseInterface,
   PageDataType,
-  EditoraInterface,
+  AutorInterface,
   LogService,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 import { createResult } from '../util';
 
-export class ListarEditoraUseCase implements UseCaseInterface {
-  private _tableName: string;
-  private logService = new LogService('ListarEditoraUseCase');
+export class ListarAutorUseCase implements UseCaseInterface {
+  private _tabelaAutores: string;
+  private logService = new LogService('ListarAutorUseCase');
   /**
    *
    */
   constructor(private _repository: RepositoryInterface) {
-    this._tableName = process.env.TABELA_EDITORAS || 'Editoras';
+    this._tabelaAutores = process.env.TABELA_AUTORES || 'Autores';
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     try {
-      this.logService.info(
-        '✅ Início da execução do caso de uso ListarEditoraUseCase',
-        {},
-        { data }
-      );
+      this.logService.info('✅ Início da execução do caso de uso ListarAutorUseCase', {}, { data });
 
       const page = data.queryStringParameters?.page
         ? parseInt(data.queryStringParameters.page, 10)
@@ -37,40 +33,40 @@ export class ListarEditoraUseCase implements UseCaseInterface {
         : 10;
       const sortBy = data.queryStringParameters?.sortBy || 'nome';
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
-      this.logService.info('🔍 Informações para buscar editoras definidas.', {
+      this.logService.info('🔍 Informações para buscar autores definidas.', {
         page,
         limit,
         sortBy,
         sortOrder,
       });
 
-      const result: ResultType = await this._repository.getAll(this._tableName, {
+      const result: ResultType = await this._repository.getAll(this._tabelaAutores, {
         page,
         limit,
         sortBy,
         sortOrder,
       });
       this.logService.info(
-        '✅ Dados de editoras recuperados',
+        '✅ Dados de autores recuperados',
         {
           total: result.totalDocuments,
         },
         { result }
       );
 
-      const entities = result.data.map((item: EditoraInterface) =>
-        Editora.create(item, Object.getOwnPropertyDescriptor(item, 'id')?.value ?? '')
+      const entities = result.data.map((item: AutorInterface) =>
+        Autor.create(item, Object.getOwnPropertyDescriptor(item, 'id')?.value ?? '')
       );
-      this.logService.info('✅ Entidades de editoras criadas.', {}, { entities });
+      this.logService.info('✅ Entidades de autores criadas.', {}, { entities });
 
-      const editoras: EditoraDTO[] = EditoraAdapter.toDTOList(entities);
+      const autores: AutorDTO[] = AutorAdapter.toDTOList(entities);
       return createResult(
-        editoras,
-        editoras.length > 0 ? 200 : 204,
-        editoras.length > 0 ? 'Editoras listadas com sucesso' : 'Nenhuma editora encontrada',
+        autores,
+        autores.length > 0 ? 200 : 204,
+        autores.length > 0 ? 'Autores listados com sucesso' : 'Nenhum autor encontrado',
         {
           page: result.currentPage ?? page,
-          totalItems: result.totalDocuments ?? editoras.length,
+          totalItems: result.totalDocuments ?? autores.length,
           totalPages: result.totalPages ?? 0,
           ...(result.hasNextPage && {
             nextPage: `?page=${page + 1}&limit=${limit}${sortBy && sortOrder && `&sortBy=${sortBy}&sortOrder=${sortOrder}`}`,
@@ -81,8 +77,8 @@ export class ListarEditoraUseCase implements UseCaseInterface {
         }
       );
     } catch (error) {
-      this.logService.error('Erro ao listar editoras:', error as Error);
-      throw new Error('Falha ao listar editoras.', { cause: error });
+      this.logService.error('Erro ao listar autores:', error as Error);
+      throw new Error('Falha ao listar autores.', { cause: error });
     }
   }
 }
