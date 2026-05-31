@@ -4,6 +4,7 @@ import {
   UseCaseInterface,
   PageDataType,
   LogService,
+  EditoraInvalidaError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -25,7 +26,7 @@ export class AlterarEditoraUseCase implements UseCaseInterface {
       const dto = JSON.parse(data.body ?? '{}') as EditoraDTO;
       if (!dto.id || dto.id.trim() === '') {
         this.logService.error('ID da editora é obrigatório para alteração.');
-        throw new Error('ID da editora é obrigatório para alteração.');
+        throw new EditoraInvalidaError('ID da editora é obrigatório para alteração.');
       }
 
       const entity = EditoraAdapter.fromCreateDTO(dto);
@@ -39,7 +40,7 @@ export class AlterarEditoraUseCase implements UseCaseInterface {
       return createResult(result.data, 200, 'Editora alterada com sucesso');
     } catch (error) {
       this.logService.error('Erro ao alterar editora:', {}, error as Error);
-      throw new Error('Falha ao alterar editora.', { cause: error });
+      throw new EditoraInvalidaError('Falha ao alterar editora.');
     }
   }
 }

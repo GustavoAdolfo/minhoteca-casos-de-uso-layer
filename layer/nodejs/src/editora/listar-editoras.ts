@@ -6,6 +6,7 @@ import {
   PageDataType,
   EditoraInterface,
   LogService,
+  EditoraInvalidaError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -82,7 +83,7 @@ export class ListarEditoraUseCase implements UseCaseInterface {
       );
     } catch (error) {
       this.logService.error('Erro ao listar editoras:', error as Error);
-      throw new Error('Falha ao listar editoras.', { cause: error });
+      throw new EditoraInvalidaError('Falha ao listar editoras.');
     }
   }
 }
