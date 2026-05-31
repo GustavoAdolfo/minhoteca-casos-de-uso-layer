@@ -45,8 +45,8 @@ export class ExcluirAutorUseCase implements UseCaseInterface {
       );
       return createResult(result.data, 200, 'Autor excluído com sucesso.');
     } catch (error) {
-      console.error('Erro ao excluir autor:', error);
-      throw new Error('Falha ao excluir autor.');
+      this.logService.error('Erro ao excluir autor:', {}, error as Error);
+      throw new AutorInvalidoError('Falha ao excluir autor.');
     }
   }
 }

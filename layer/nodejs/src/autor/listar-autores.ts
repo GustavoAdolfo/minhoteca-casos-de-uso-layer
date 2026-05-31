@@ -6,6 +6,7 @@ import {
   PageDataType,
   AutorInterface,
   LogService,
+  AutorInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -77,8 +78,8 @@ export class ListarAutorUseCase implements UseCaseInterface {
         }
       );
     } catch (error) {
-      this.logService.error('Erro ao listar autores:', error as Error);
-      throw new Error('Falha ao listar autores.', { cause: error });
+      this.logService.error('Erro ao listar autores:', {}, error as Error);
+      throw new AutorInvalidoError('Falha ao listar autores.');
     }
   }
 }

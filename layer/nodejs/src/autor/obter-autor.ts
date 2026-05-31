@@ -8,6 +8,7 @@ import {
   AutorInterface,
   LogService,
   LivroDTO,
+  AutorInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import {
   KeyValueAttr,
@@ -79,10 +80,10 @@ export class ObterAutorUseCase implements UseCaseInterface {
         return createResult([], 404, 'Autor não encontrado.');
       }
 
-      throw new Error('ID do autor não informado.');
+      throw new AutorInvalidoError('ID do autor não informado.');
     } catch (error) {
-      console.error('Erro ao obter autor:', error);
-      throw new Error('Falha ao obter autor.');
+      this.logService.error('Erro ao obter autor:', {}, error as Error);
+      throw new AutorInvalidoError('Falha ao obter autor.');
     }
   }
 }

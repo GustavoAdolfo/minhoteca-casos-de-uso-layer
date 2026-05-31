@@ -4,6 +4,7 @@ import {
   UseCaseInterface,
   PageDataType,
   LogService,
+  AutorInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -23,7 +24,7 @@ export class AlterarAutorUseCase implements UseCaseInterface {
       const dto = JSON.parse(data.body ?? '{}') as AutorDTO;
       if (!dto.id || dto.id.trim() === '') {
         this.logService.error('ID do Autor é obrigatório para alteração.');
-        throw new Error('ID do Autor é obrigatório para alteração.');
+        throw new AutorInvalidoError('ID do Autor é obrigatório para alteração.');
       }
 
       const entity = AutorAdapter.fromCreateDTO(dto);
@@ -37,7 +38,7 @@ export class AlterarAutorUseCase implements UseCaseInterface {
       return createResult(result.data, 200, 'Autor alterado com sucesso');
     } catch (error) {
       this.logService.error('Erro ao alterar Autor:', {}, error as Error);
-      throw new Error('Falha ao alterar Autor.', { cause: error });
+      throw new AutorInvalidoError('Falha ao alterar Autor.');
     }
   }
 }
