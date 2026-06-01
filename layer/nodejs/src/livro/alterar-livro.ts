@@ -4,6 +4,7 @@ import {
   UseCaseInterface,
   PageDataType,
   LogService,
+  LivroInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda/trigger/api-gateway-proxy';
@@ -22,7 +23,7 @@ export class AlterarLivroUseCase implements UseCaseInterface {
     try {
       const dto = JSON.parse(data.body || '{}') as LivroDTO;
       if (!dto.id || dto.id.trim() === '') {
-        throw new Error('ID do livro é obrigatório para alteração.');
+        throw new LivroInvalidoError('ID do livro é obrigatório para alteração.');
       }
 
       const entity = LivroAdapter.fromCreateDTO(dto);
@@ -34,7 +35,7 @@ export class AlterarLivroUseCase implements UseCaseInterface {
       return createResult(result.data, 200, 'Livro alterado com sucesso');
     } catch (error) {
       this.logService.error('Erro ao alterar livro:', { data }, error as Error);
-      throw new Error('Falha ao alterar livro.');
+      throw new LivroInvalidoError('Falha ao alterar livro.');
     }
   }
 }

@@ -1,34 +1,30 @@
 import {
-  Editora,
-  EditoraAdapter,
-  EditoraDTO,
+  Pais,
+  PaisAdapter,
+  PaisDTO,
   UseCaseInterface,
   PageDataType,
-  EditoraInterface,
+  PaisInterface,
   LogService,
-  EditoraInvalidaError,
+  PaisInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 import { createResult } from '../util';
 
-export class ListarEditoraUseCase implements UseCaseInterface {
+export class ListarPaisUseCase implements UseCaseInterface {
   private _tableName: string;
-  private logService = new LogService('ListarEditoraUseCase');
+  private logService = new LogService('ListarPaisUseCase');
   /**
    *
    */
   constructor(private _repository: RepositoryInterface) {
-    this._tableName = process.env.TABELA_EDITORAS || 'Editoras';
+    this._tableName = process.env.TABELA_PAISES || 'Paises';
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     try {
-      this.logService.info(
-        '✅ Início da execução do caso de uso ListarEditoraUseCase',
-        {},
-        { data }
-      );
+      this.logService.info('✅ Início da execução do caso de uso ListarPaisUseCase', {}, { data });
 
       const page = data.queryStringParameters?.page
         ? parseInt(data.queryStringParameters.page, 10)
@@ -36,9 +32,9 @@ export class ListarEditoraUseCase implements UseCaseInterface {
       const limit = data.queryStringParameters?.limit
         ? parseInt(data.queryStringParameters.limit, 10)
         : 10;
-      const sortBy = data.queryStringParameters?.sortBy || 'nome';
+      const sortBy = data.queryStringParameters?.sortBy || 'nomePortugues';
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
-      this.logService.info('🔍 Informações para buscar editoras definidas.', {
+      this.logService.info('🔍 Informações para buscar países definidas.', {
         page,
         limit,
         sortBy,
@@ -52,26 +48,24 @@ export class ListarEditoraUseCase implements UseCaseInterface {
         sortOrder,
       });
       this.logService.info(
-        '✅ Dados de editoras recuperados',
+        '✅ Dados de países recuperados',
         {
           total: result.totalDocuments,
         },
         { result }
       );
 
-      const entities = result.data.map((item: EditoraInterface) =>
-        Editora.create(item, Object.getOwnPropertyDescriptor(item, 'id')?.value ?? '')
-      );
-      this.logService.info('✅ Entidades de editoras criadas.', {}, { entities });
+      const entities = result.data.map((item: PaisInterface) => Pais.create(item));
+      this.logService.info('✅ Entidades de países criadas.', {}, { entities });
 
-      const editoras: EditoraDTO[] = EditoraAdapter.toDTOList(entities);
+      const paises: PaisDTO[] = PaisAdapter.toDTOList(entities);
       return createResult(
-        editoras,
-        editoras.length > 0 ? 200 : 204,
-        editoras.length > 0 ? 'Editoras listadas com sucesso' : 'Nenhuma editora encontrada',
+        paises,
+        paises.length > 0 ? 200 : 204,
+        paises.length > 0 ? 'Países listadas com sucesso' : 'Nenhuma editora encontrada',
         {
           page: result.currentPage ?? page,
-          totalItems: result.totalDocuments ?? editoras.length,
+          totalItems: result.totalDocuments ?? paises.length,
           totalPages: result.totalPages ?? 0,
           ...(result.hasNextPage && {
             nextPage: `?page=${page + 1}&limit=${limit}${sortBy && sortOrder && `&sortBy=${sortBy}&sortOrder=${sortOrder}`}`,
@@ -82,8 +76,8 @@ export class ListarEditoraUseCase implements UseCaseInterface {
         }
       );
     } catch (error) {
-      this.logService.error('Erro ao listar editoras:', error as Error);
-      throw new EditoraInvalidaError('Falha ao listar editoras.');
+      this.logService.error('Erro ao listar países:', { data }, error as Error);
+      throw new PaisInvalidoError('Falha ao listar países.');
     }
   }
 }

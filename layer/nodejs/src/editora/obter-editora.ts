@@ -5,6 +5,7 @@ import {
   UseCaseInterface,
   EditoraInterface,
   LogService,
+  EditoraInvalidaError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import {
   KeyValueAttr,
@@ -52,10 +53,11 @@ export class ObterEditoraUseCase implements UseCaseInterface {
         return createResult([], 404, 'Editora não encontrada.');
       }
 
-      throw new Error('ID da editora não informado.');
+      throw new EditoraInvalidaError('ID da editora não informado.');
     } catch (error) {
+      EditoraInvalidaError;
       console.error('Erro ao obter editora:', error);
-      throw new Error('Falha ao obter editora.');
+      throw new EditoraInvalidaError('Falha ao obter editora.');
     }
   }
 }
