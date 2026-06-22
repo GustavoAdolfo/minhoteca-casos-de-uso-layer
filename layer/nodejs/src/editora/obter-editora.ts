@@ -56,7 +56,7 @@ export class ObterEditoraUseCase implements UseCaseInterface {
       throw new EditoraInvalidaError('ID da editora não informado.');
     } catch (error) {
       EditoraInvalidaError;
-      console.error('Erro ao obter editora:', error);
+      this.logService.error('Erro ao obter editora:', {}, error as Error);
       throw new EditoraInvalidaError('Falha ao obter editora.');
     }
   }
