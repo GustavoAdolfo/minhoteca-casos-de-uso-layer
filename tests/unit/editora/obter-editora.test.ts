@@ -1,5 +1,6 @@
 import { ObterEditoraUseCase } from '../../../layer/nodejs/src/editora/obter-editora';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
+import { LogService } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 
 // Mock parcial do core-layer (acompanhando o padrão de outros testes)
@@ -17,7 +18,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ObterEditoraUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  let consoleErrorSpy: jest.SpyInstance;
 
   const editoraMockData = {
     id: '1234567890',
@@ -26,15 +26,6 @@ describe('ObterEditoraUseCase', () => {
     website: 'http://editora-mock-website.com',
     pais: 'BRA',
   };
-
-  beforeAll(() => {
-    // Suprime o console.error gerado pelo bloco catch do caso de uso
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterAll(() => {
-    consoleErrorSpy.mockRestore();
-  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -59,6 +50,18 @@ describe('ObterEditoraUseCase', () => {
       pathParameters,
       queryStringParameters,
     }) as unknown as APIGatewayEvent;
+
+  const getLogServiceErrorMock = (): jest.Mock => {
+    const logServiceInstance = (LogService as unknown as jest.Mock).mock.results.at(-1)?.value as
+      | { error: jest.Mock }
+      | undefined;
+
+    if (!logServiceInstance) {
+      throw new Error('LogService mock não foi inicializado.');
+    }
+
+    return logServiceInstance.error;
+  };
 
   it('deve obter uma editora com sucesso utilizando pathParameters', async () => {
     const mockResult: ResultType = {
@@ -143,7 +146,7 @@ describe('ObterEditoraUseCase', () => {
     const event = createEvent({ id: '123' });
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter editora.');
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(getLogServiceErrorMock()).toHaveBeenCalled();
   });
 
   it('deve utilizar o nome da tabela das variáveis de ambiente se estiver definida (branch coverage)', async () => {
