@@ -1,9 +1,9 @@
-import { ObterEditoraUseCase } from '../../../layer/nodejs/src/editora/obter-editora';
+import { ObterPaisUseCase } from '../../../layer/nodejs/src/pais/obter-pais';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
-import { LogService } from '@gustavoadolfo/minhoteca-core-layer';
+import { LogService, PaisInvalidoError } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 
-// Mock parcial do core-layer (acompanhando o padrão de outros testes)
+// Mock parcial do core-layer para isolar o LogService
 jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
   const actual = jest.requireActual('@gustavoadolfo/minhoteca-core-layer');
   return {
@@ -16,15 +16,16 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
   };
 });
 
-describe('ObterEditoraUseCase', () => {
+describe('ObterPaisUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
 
-  const editoraMockData = {
-    id: '1234567890',
-    nome: 'editora-mock-name',
-    email: 'editora-mock@email.net',
-    website: 'http://editora-mock-website.com',
-    pais: 'BRA',
+  const paisMockData = {
+    isoNumeric: 76,
+    nome: 'Brasil',
+    nomePortugues: 'Brasil',
+    bandeira: 'data:image/png;base64,...',
+    isoAlpha3: 'BRA',
+    isoAlpha2: 'BR',
   };
 
   beforeEach(() => {
@@ -51,21 +52,9 @@ describe('ObterEditoraUseCase', () => {
       queryStringParameters,
     }) as unknown as APIGatewayEvent;
 
-  const getLogServiceErrorMock = (): jest.Mock => {
-    const logServiceInstance = (LogService as unknown as jest.Mock).mock.results.at(-1)?.value as
-      | { error: jest.Mock }
-      | undefined;
-
-    if (!logServiceInstance) {
-      throw new Error('LogService mock não foi inicializado.');
-    }
-
-    return logServiceInstance.error;
-  };
-
-  it('deve obter uma editora com sucesso utilizando pathParameters', async () => {
+  it('deve obter um país com sucesso utilizando pathParameters', async () => {
     const mockResult: ResultType = {
-      data: [editoraMockData],
+      data: [paisMockData],
       limit: 1,
       currentPage: 1,
       totalPages: 1,
@@ -75,95 +64,97 @@ describe('ObterEditoraUseCase', () => {
     };
     repoMock.queryData.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ObterEditoraUseCase(repoMock);
-    const event = createEvent({ id: '1234567890' });
+    const useCase = new ObterPaisUseCase(repoMock);
+    const event = createEvent({ id: '76' });
 
     const result = await useCase.execute(event);
 
-    expect(repoMock.queryData).toHaveBeenCalledWith('Editoras', [
+    expect(repoMock.queryData).toHaveBeenCalledWith('Paises', [
       {
-        attribute: { AttributeName: 'id', AttributeType: 'S' },
-        attributeValue: '1234567890',
+        attribute: {
+          AttributeName: 'isoNumeric',
+          AttributeType: 'S',
+        },
+        attributeValue: '76',
         partitionKey: false,
         sortKey: false,
       },
     ]);
     expect(result.Code).toBe(200);
-    expect(result.Message).toBe('Editora obtida com sucesso.');
-    expect(result.PageData).toEqual(
-      expect.arrayContaining([expect.objectContaining({ nome: 'editora-mock-name' })])
-    );
+    expect(result.Message).toBe('País obtido com sucesso.');
+    expect(result.PageData).toEqual([expect.objectContaining({ nome: 'Brasil' })]);
   });
 
-  it('deve obter uma editora com sucesso utilizando queryStringParameters (fallback de id)', async () => {
-    const mockResult: ResultType = {
-      data: [editoraMockData],
-      limit: 1,
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
+  it('deve obter um país com sucesso utilizando queryStringParameters como fallback', async () => {
+    const mockResult: ResultType = { data: [paisMockData] } as ResultType;
     repoMock.queryData.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ObterEditoraUseCase(repoMock);
-    const event = createEvent(null, { id: '9999' });
+    const useCase = new ObterPaisUseCase(repoMock);
+    const event = createEvent(null, { id: '76' });
 
     await useCase.execute(event);
 
-    expect(repoMock.queryData).toHaveBeenCalledWith(
-      'Editoras',
-      expect.arrayContaining([expect.objectContaining({ attributeValue: '9999' })])
-    );
+    expect(repoMock.queryData).toHaveBeenCalledWith('Paises', [
+      {
+        attribute: {
+          AttributeName: 'isoNumeric',
+          AttributeType: 'S',
+        },
+        attributeValue: '76',
+        partitionKey: false,
+        sortKey: false,
+      },
+    ]);
   });
 
-  it('deve retornar 404 e usar logger.warn quando o repositório não retornar uma result válida', async () => {
-    // Simulando retorno null que aciona a branch `if (result)` false
-    repoMock.queryData.mockResolvedValueOnce(null as unknown as ResultType);
+  it('deve retornar 404 quando o país não for encontrado', async () => {
+    const mockResult: ResultType = { data: [] } as ResultType;
+    repoMock.queryData.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ObterEditoraUseCase(repoMock);
+    const useCase = new ObterPaisUseCase(repoMock);
     const event = createEvent({ id: 'nao-existe' });
 
     const result = await useCase.execute(event);
 
     expect(result.Code).toBe(404);
-    expect(result.Message).toBe('Editora não encontrada.');
+    expect(result.Message).toBe('País não encontrado.');
     expect(result.PageData).toEqual([]);
+    const logServiceInstance = (LogService as jest.Mock).mock.results[0].value;
+    expect(logServiceInstance.warn).toHaveBeenCalledWith('País com id nao-existe não encontrado.');
   });
 
-  it('deve lançar erro genérico no log (e retornar falha) quando nenhum ID for informado', async () => {
-    const useCase = new ObterEditoraUseCase(repoMock);
+  it('deve lançar PaisInvalidoError quando nenhum ID for informado', async () => {
+    const useCase = new ObterPaisUseCase(repoMock);
     const event = createEvent(null, null);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter editora.');
+    await expect(useCase.execute(event)).rejects.toThrow(
+      new PaisInvalidoError('Falha ao obter país.')
+    );
   });
 
-  it('deve lançar erro genérico quando o repositório falhar internamente', async () => {
-    repoMock.queryData.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
+  it('deve lançar PaisInvalidoError quando o repositório falhar', async () => {
+    repoMock.queryData.mockRejectedValueOnce(new Error('Erro de banco de dados'));
 
-    const useCase = new ObterEditoraUseCase(repoMock);
+    const useCase = new ObterPaisUseCase(repoMock);
     const event = createEvent({ id: '123' });
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter editora.');
-    expect(getLogServiceErrorMock()).toHaveBeenCalled();
+    await expect(useCase.execute(event)).rejects.toThrow(
+      new PaisInvalidoError('Falha ao obter país.')
+    );
   });
 
-  it('deve utilizar o nome da tabela das variáveis de ambiente se estiver definida (branch coverage)', async () => {
-    const originalEnv = process.env.TABELA_EDITORAS;
-    process.env.TABELA_EDITORAS = 'Tabela_Mock_Editora_Obter';
+  it('deve utilizar o nome da tabela da variável de ambiente', async () => {
+    const originalEnv = process.env.TABELA_PAISES;
+    process.env.TABELA_PAISES = 'Tabela_Mock_Obter_Pais';
 
     try {
-      repoMock.queryData.mockResolvedValueOnce({ data: [editoraMockData] } as ResultType);
-      const useCase = new ObterEditoraUseCase(repoMock);
+      repoMock.queryData.mockResolvedValueOnce({ data: [paisMockData] } as ResultType);
+      const useCase = new ObterPaisUseCase(repoMock);
 
       await useCase.execute(createEvent({ id: '999' }));
-      expect(repoMock.queryData).toHaveBeenCalledWith(
-        'Tabela_Mock_Editora_Obter',
-        expect.any(Array)
-      );
+      expect(repoMock.queryData).toHaveBeenCalledWith('Tabela_Mock_Obter_Pais', expect.any(Array));
     } finally {
-      process.env.TABELA_EDITORAS = originalEnv;
+      process.env.TABELA_PAISES = originalEnv;
     }
   });
 });
