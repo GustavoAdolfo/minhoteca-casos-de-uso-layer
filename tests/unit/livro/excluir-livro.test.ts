@@ -1,5 +1,6 @@
 import { ExcluirLivroUseCase } from '../../../layer/nodejs/src/livro/excluir-livro';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
+import { LogService } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 
 // Mock parcial do core-layer (acompanhando o padrão de outros testes)
@@ -17,7 +18,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ExcluirLivroUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  let consoleErrorSpy: jest.SpyInstance;
 
   const mockResult: ResultType = {
     data: [],
@@ -28,15 +28,6 @@ describe('ExcluirLivroUseCase', () => {
     hasNextPage: false,
     hasPrevPage: false,
   };
-
-  beforeAll(() => {
-    // Suprime o console.error gerado pelo bloco catch do caso de uso
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterAll(() => {
-    consoleErrorSpy.mockRestore();
-  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -60,6 +51,18 @@ describe('ExcluirLivroUseCase', () => {
     ({
       queryStringParameters,
     }) as unknown as APIGatewayEvent;
+
+  const getLogServiceErrorMock = (): jest.Mock => {
+    const logServiceInstance = (LogService as unknown as jest.Mock).mock.results.at(-1)?.value as
+      | { error: jest.Mock }
+      | undefined;
+
+    if (!logServiceInstance) {
+      throw new Error('LogService mock não foi inicializado.');
+    }
+
+    return logServiceInstance.error;
+  };
 
   it('deve excluir um livro com sucesso quando o id for informado', async () => {
     repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
@@ -113,6 +116,6 @@ describe('ExcluirLivroUseCase', () => {
     await expect(useCase.execute(createEvent({ id: '12345' }))).rejects.toThrow(
       'Falha ao excluir livro.'
     );
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(getLogServiceErrorMock()).toHaveBeenCalled();
   });
 });

@@ -4,6 +4,7 @@ import {
   UseCaseInterface,
   PageDataType,
   LogService,
+  LivroInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda/trigger/api-gateway-proxy';
@@ -34,7 +35,7 @@ export class CriarLivroUseCase implements UseCaseInterface {
       return createResult([livroDTO], 201, 'Livro criado com sucesso');
     } catch (error) {
       this.logService.error('Erro ao criar livro:', {}, error as Error);
-      throw new Error('Falha ao criar livro.', { cause: error });
+      throw new LivroInvalidoError('Falha ao criar livro.');
     }
   }
 }

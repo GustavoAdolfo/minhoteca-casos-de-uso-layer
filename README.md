@@ -23,13 +23,13 @@ Minhoteca tem como missão facilitar o acesso gratuito à leitura, gestão de em
 
 - Casos de Uso (Use Cases) padronizados e reutilizáveis para `Editora`, `Autor`, `Livro` e `Pais`.
 - Implementação de regras de negócio centrais, agnósticas a frameworks de entrega.
+- Classes de erro específicas por entidade (`Autor`, `Editora`, `Livro`, `Pais`).
 - Funções utilitárias de paginação e padronização de respostas para API (`createResult`).
 - Tratamento estruturado de logs via integração com a `core-layer`.
 - Total integração para implantação automatizada na AWS via **Terraform** como um Lambda Layer.
 - Cobertura abrangente de testes unitários com Jest.
 - **CI/CD Automatizado:** Build, testes e deploy via GitHub Actions.
 - **Pronto para AWS Lambda Layers:** Documentação completa de deployment.
-- Versão `0.2.0` com casos de uso completos de `Autor` e melhorias de teste/consistência para `Editora`.
 
 ## 🚀 Começar Rápido
 
@@ -49,9 +49,10 @@ A hierarquia do projeto está segmentada da seguinte forma:
 ```text
 minhoteca-casos-de-uso-layer/
 ├── layer/nodejs/src/    # Código-fonte principal empacotado para a AWS Lambda
-│   ├── editora/         # Use Cases de Editora (Alterar, Excluir, Listar, Obter)
-│   ├── autor/           # Use Cases de Autor (Alterar, Excluir, Listar, Obter)
-│   ├── pais/            # Use Cases de País
+│   ├── editora/         # Use Cases de Editora (Criar, Alterar, Excluir, Listar, Obter)
+│   ├── autor/           # Use Cases de Autor (Criar, Alterar, Excluir, Listar, Obter)
+│   ├── livro/           # Use Cases de Livro (Criar, Alterar, Excluir, Listar, Obter)
+│   ├── pais/            # Use Cases de País (Criar, Alterar, Excluir, Listar, Obter)
 │   └── util/            # Helpers e Utilitários (ex: processamento de Results)
 ├── tests/               # Testes unitários com a suíte Jest espelhando a raiz
 ├── terraform/           # Scripts para criação de infraestrutura na AWS

@@ -45,8 +45,8 @@ export class ExcluirEditoraUseCase implements UseCaseInterface {
       );
       return createResult(result.data, 200, 'Editora excluída com sucesso.');
     } catch (error) {
-      console.error('Erro ao excluir editora:', error);
-      throw new Error('Falha ao excluir editora.');
+      this.logService.error('Erro ao excluir editora:', {}, error as Error);
+      throw new EditoraInvalidaError('Falha ao excluir editora.');
     }
   }
 }

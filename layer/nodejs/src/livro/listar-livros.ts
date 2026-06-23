@@ -6,6 +6,7 @@ import {
   UseCaseInterface,
   PageDataType,
   LogService,
+  LivroInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -76,7 +77,7 @@ export class ListarLivroUseCase implements UseCaseInterface {
       );
     } catch (error) {
       this.logService.error('Erro ao listar livros:', error as Error);
-      throw new Error('Falha ao listar livros.', { cause: error });
+      throw new LivroInvalidoError('Falha ao listar livros.');
     }
   }
 }

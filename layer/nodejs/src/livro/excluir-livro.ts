@@ -2,7 +2,7 @@ import {
   LogService,
   PageDataType,
   UseCaseInterface,
-  AutorInvalidoError,
+  LivroInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -21,7 +21,7 @@ export class ExcluirLivroUseCase implements UseCaseInterface {
     const livroId = data.queryStringParameters?.id;
     if (!livroId) {
       this.logService.warn('ID do livro não fornecido.');
-      throw new AutorInvalidoError('ID do livro é obrigatório para exclusão.');
+      throw new LivroInvalidoError('ID do livro é obrigatório para exclusão.');
     }
 
     try {
@@ -31,8 +31,8 @@ export class ExcluirLivroUseCase implements UseCaseInterface {
       );
       return createResult(result.data, 200, 'Livro excluído com sucesso.');
     } catch (error) {
-      console.error('Erro ao excluir livro:', error);
-      throw new Error('Falha ao excluir livro.');
+      this.logService.error('Erro ao excluir livro:', {}, error as Error);
+      throw new LivroInvalidoError('Falha ao excluir livro.');
     }
   }
 }

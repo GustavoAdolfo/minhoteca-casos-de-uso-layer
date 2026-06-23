@@ -7,6 +7,7 @@ import {
   UseCaseInterface,
   LivroInterface,
   LogService,
+  LivroInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -60,10 +61,10 @@ export class ObterLivroUseCase implements UseCaseInterface {
         return createResult([], 404, 'Livro não encontrado.');
       }
 
-      throw new Error('ID do livro não informado.');
+      throw new LivroInvalidoError('ID do livro não informado.');
     } catch (error) {
       this.logService.error('Falha ao obter livro:', { data }, error as Error);
-      throw new Error('Falha ao obter livro.');
+      throw new LivroInvalidoError('Falha ao obter livro.');
     }
   }
 }

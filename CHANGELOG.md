@@ -11,40 +11,60 @@ e este projeto segue [Semantic Versioning](https://semver.org/).
 
 - Implementação dos casos de uso para a entidade `Pais`.
 
-### Changed
+### Refactored
 
-- Atualização da documentação no README e CHANGELOG para refletir o estado atual do projeto.
-- Melhorias na descrição dos casos de uso de `Autor`, `Livro` e `Editora`.
+- Implementação de classes de erro específicas para `Autor`, `Editora`, `Livro` e `Pais` (#137).
 
-## [1.0.0] - Planned
-
-### Changed
-
-- Revisão completa de todos os casos de uso.
-- Documentação do projeto atualizada.
-- Refatoração de código e ajustes pós-testes.
-
-## [0.4.0] - Planned
+## [0.3.0] - 2025-01-01
 
 ### Added
 
-- Implementação dos casos de uso para a entidade `País`.
+- Implementação dos casos de uso para a entidade `Livro` (#4).
 
-## [0.3.0] - Planned
+### Refactored
+
+- Revisões e melhorias nos casos de uso de `Autor`.
+- Atualização da cobertura de testes.
+
+## [0.2.0] - 2024-12-20
 
 ### Added
 
-- Implementação dos casos de uso para a entidade `Livro`.
+- Implementação dos casos de uso para a entidade `Autor` (#3).
 
-## [0.2.0] - 2026-05-30
+### Refactored
+
+- Ajustes nos casos de uso de `Editora` (#1).
+
+## [0.1.4] - 2024-12-15
 
 ### Added
 
-- Casos de uso completos para a entidade `Autor`, incluindo criar, alterar, excluir, listar e obter.
+- Validação de dependências na operação de exclusão de `Editora` — impede exclusão quando há livros associados.
+- Lançamento de erros para ID de editora inválido no `ExcluirEditoraUseCase`.
 
-### Changed
+### Tests
 
-- Ajustes de refatoração nos casos de uso de `Editora` para melhorar consistência de tratamento e testes.
+- Cobertura do cenário de não exclusão de editora com livros associados.
+
+## [0.1.3] - 2024-12-13
+
+### Dependencies
+
+- Atualização de `@aws-sdk/node-http-handler` de 3.370.0 para 3.374.0.
+- Atualização de `aws-lambda` de 1.0.6 para 1.0.7.
+
+## [0.1.2] - 2024-12-12
+
+### Infrastructure
+
+- Revisão e melhorias na implementação do Terraform.
+
+## [0.1.1] - 2024-12-11
+
+### Infrastructure
+
+- Revisão inicial da implementação do Terraform.
 
 ## [0.1.0] - 2024-12-10
 

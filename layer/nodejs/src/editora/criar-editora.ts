@@ -4,6 +4,7 @@ import {
   UseCaseInterface,
   PageDataType,
   LogService,
+  EditoraInvalidaError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -22,7 +23,6 @@ export class CriarEditoraUseCase implements UseCaseInterface {
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     try {
-      console.warn('data', data);
       const body = JSON.parse(data.body ?? '{}');
       this.logService.info('Dados recebidos para gravação', { body });
 
@@ -37,7 +37,7 @@ export class CriarEditoraUseCase implements UseCaseInterface {
       return createResult([editoraDTO], 201, 'Editora criada com sucesso');
     } catch (error) {
       this.logService.error('Erro ao criar editora:', {}, error as Error);
-      throw new Error('Falha ao criar editora.', { cause: error });
+      throw new EditoraInvalidaError('Falha ao criar editora.');
     }
   }
 }

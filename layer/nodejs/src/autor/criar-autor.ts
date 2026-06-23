@@ -4,6 +4,7 @@ import {
   UseCaseInterface,
   PageDataType,
   LogService,
+  AutorInvalidoError,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -34,7 +35,7 @@ export class CriarAutorUseCase implements UseCaseInterface {
       return createResult([autorDTO], 201, 'Autor criado com sucesso');
     } catch (error) {
       this.logService.error('Erro ao criar autor:', {}, error as Error);
-      throw new Error('Falha ao criar autor.', { cause: error });
+      throw new AutorInvalidoError('Falha ao criar autor.');
     }
   }
 }
