@@ -1,8 +1,9 @@
-import { ExcluirEditoraUseCase } from '../../../layer/nodejs/src/editora/excluir-editora';
+import { ExcluirPaisUseCase } from '../../../layer/nodejs/src/pais/excluir-pais';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
+import { LogService, PaisInvalidoError } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 
-// Mock parcial do core-layer (acompanhando o padrão de outros testes)
+// Mock parcial do core-layer para isolar o LogService
 jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
   const actual = jest.requireActual('@gustavoadolfo/minhoteca-core-layer');
   return {
@@ -15,9 +16,8 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
   };
 });
 
-describe('ExcluirEditoraUseCase', () => {
+describe('ExcluirPaisUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  let consoleErrorSpy: jest.SpyInstance;
 
   const mockResult: ResultType = {
     data: [],
@@ -28,15 +28,6 @@ describe('ExcluirEditoraUseCase', () => {
     hasNextPage: false,
     hasPrevPage: false,
   };
-
-  beforeAll(() => {
-    // Suprime o console.error gerado pelo bloco catch do caso de uso
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterAll(() => {
-    consoleErrorSpy.mockRestore();
-  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,7 +44,6 @@ describe('ExcluirEditoraUseCase', () => {
     } as jest.Mocked<RepositoryInterface>;
   });
 
-  // Função utilitária para facilitar a criação de eventos
   const createEvent = (
     queryStringParameters: Record<string, string> | null = null
   ): APIGatewayEvent =>
@@ -61,78 +51,79 @@ describe('ExcluirEditoraUseCase', () => {
       queryStringParameters,
     }) as unknown as APIGatewayEvent;
 
-  it('deve excluir uma editora com sucesso quando o id for informado', async () => {
+  it('deve excluir um país com sucesso quando o id for informado e não houver autores associados', async () => {
     repoMock.getAll.mockResolvedValueOnce({ data: [] } as unknown as ResultType);
     repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
-    const useCase = new ExcluirEditoraUseCase(repoMock);
+    const useCase = new ExcluirPaisUseCase(repoMock);
 
-    const event = createEvent({ id: '12345' });
+    const event = createEvent({ id: '76' }); // ID do Brasil
     const result = await useCase.execute(event);
 
-    expect(repoMock.getAll).toHaveBeenCalled();
-    expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Editoras', '12345');
+    expect(repoMock.getAll).toHaveBeenCalledWith('Autores', {
+      filterKey: 'paisId',
+      filterValue: '76',
+    });
+    expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Paises', '76');
     expect(result.Code).toBe(200);
-    expect(result.Message).toBe('Editora excluída com sucesso.');
+    expect(result.Message).toBe('País excluído com sucesso.');
   });
 
-  it('deve lançar erro quando existirem livros associados à editora', async () => {
+  it('deve lançar PaisInvalidoError quando existirem autores associados ao país', async () => {
     repoMock.getAll.mockResolvedValueOnce({
-      data: [{ id: 'livro-1', titulo: 'Livro Teste' }],
+      data: [{ id: 'autor-1', nome: 'Autor Teste' }],
     } as unknown as ResultType);
 
-    const useCase = new ExcluirEditoraUseCase(repoMock);
-    const event = createEvent({ id: '12345' });
+    const useCase = new ExcluirPaisUseCase(repoMock);
+    const event = createEvent({ id: '76' });
 
     await expect(useCase.execute(event)).rejects.toThrow(
-      'Não é possível excluir a editora porque existem livros associados a ela.'
+      new PaisInvalidoError(
+        'Não é possível excluir o país porque existem autores associados a ele.'
+      )
     );
 
     expect(repoMock.getAll).toHaveBeenCalled();
     expect(repoMock.deleteByMinhotecaId).not.toHaveBeenCalled();
   });
 
-  it('deve retornar erro quando queryStringParameters for null (branch coverage)', async () => {
-    const useCase = new ExcluirEditoraUseCase(repoMock);
+  it('deve lançar PaisInvalidoError quando o ID do país não for informado', async () => {
+    const useCase = new ExcluirPaisUseCase(repoMock);
 
     const event = createEvent(null);
     await expect(useCase.execute(event)).rejects.toThrow(
-      'ID da editora é obrigatório para exclusão.'
+      new PaisInvalidoError('ID do país é obrigatório para exclusão.')
     );
   });
 
-  it('deve retornar erro quando o id não estiver presente no queryStringParameters (branch coverage)', async () => {
-    const useCase = new ExcluirEditoraUseCase(repoMock);
-
-    const event = createEvent({ outroParametro: 'abc' });
-    await expect(useCase.execute(event)).rejects.toThrow(
-      'ID da editora é obrigatório para exclusão.'
-    );
-  });
-
-  it('deve utilizar o nome da tabela das variáveis de ambiente se estiver definida (branch coverage)', async () => {
-    const originalEnv = process.env.TABELA_EDITORAS;
-    process.env.TABELA_EDITORAS = 'Tabela_Mock_Editora';
+  it('deve utilizar os nomes das tabelas das variáveis de ambiente', async () => {
+    const originalEnvPaises = process.env.TABELA_PAISES;
+    const originalEnvAutores = process.env.TABELA_AUTORES;
+    process.env.TABELA_PAISES = 'Tabela_Mock_Pais';
+    process.env.TABELA_AUTORES = 'Tabela_Mock_Autor';
 
     try {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as unknown as ResultType);
       repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
-      const useCase = new ExcluirEditoraUseCase(repoMock);
+      const useCase = new ExcluirPaisUseCase(repoMock);
 
       await useCase.execute(createEvent({ id: '999' }));
-      expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Editora', '999');
+      expect(repoMock.getAll).toHaveBeenCalledWith('Tabela_Mock_Autor', expect.any(Object));
+      expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Pais', '999');
     } finally {
-      process.env.TABELA_EDITORAS = originalEnv;
+      process.env.TABELA_PAISES = originalEnvPaises;
+      process.env.TABELA_AUTORES = originalEnvAutores;
     }
   });
 
-  it('deve tratar e lançar o erro correto quando o repositório falhar (branch coverage)', async () => {
+  it('deve lançar PaisInvalidoError quando o repositório falhar na exclusão', async () => {
     repoMock.getAll.mockResolvedValueOnce({ data: [] } as unknown as ResultType);
-    repoMock.deleteByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
-    const useCase = new ExcluirEditoraUseCase(repoMock);
+    repoMock.deleteByMinhotecaId.mockRejectedValueOnce(new Error('Erro de banco de dados'));
+    const useCase = new ExcluirPaisUseCase(repoMock);
 
-    await expect(useCase.execute(createEvent({ id: '12345' }))).rejects.toThrow(
-      'Falha ao excluir editora.'
+    await expect(useCase.execute(createEvent({ id: '76' }))).rejects.toThrow(
+      new PaisInvalidoError('Falha ao excluir país.')
     );
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    const logServiceInstance = (LogService as jest.Mock).mock.results[0].value;
+    expect(logServiceInstance.error).toHaveBeenCalled();
   });
 });

@@ -1,7 +1,7 @@
-import { CriarEditoraUseCase } from '../../../layer/nodejs/src/editora/criar-editora';
+import { CriarPaisUseCase } from '../../../layer/nodejs/src/pais/criar-pais';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
-import { EditoraAdapter } from '@gustavoadolfo/minhoteca-core-layer';
+import { PaisAdapter, PaisInvalidoError } from '@gustavoadolfo/minhoteca-core-layer';
 
 // Realizamos o mock parcial da camada core para isolar os testes do UseCase
 jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
@@ -16,34 +16,22 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
   };
 });
 
-describe('CriarEditoraUseCase', () => {
-  let mongoRepoMock: jest.Mocked<RepositoryInterface>;
-  let dynamoRepoMock: jest.Mocked<RepositoryInterface>;
+describe('CriarPaisUseCase', () => {
+  let repoMock: jest.Mocked<RepositoryInterface>;
 
-  // Utilizamos o modelo de dados real extraído do arquivo de mock
-  const editoraMockData = {
-    id: '1234567890',
-    nome: 'editora-mock-name',
-    email: 'editora-mock@email.net',
-    website: 'http://editora-mock-website',
-    pais: 'BRA',
-    logoUrl: 'http://editora-mock-logoUrl/logo.jpg',
+  const paisMockData = {
+    isoNumeric: 76,
+    nome: 'Brasil',
+    nomePortugues: 'Brasil',
+    bandeira: 'data:image/png;base64,...',
+    isoAlpha3: 'BRA',
+    isoAlpha2: 'BR',
   };
-
-  beforeAll(() => {
-    // Suprime os logs de erro no console durante os testes
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterAll(() => {
-    jest.restoreAllMocks();
-  });
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Mock dos repositórios específicos
-    mongoRepoMock = {
+    repoMock = {
       saveData: jest.fn(),
       getAll: jest.fn(),
       getData: jest.fn(),
@@ -53,29 +41,6 @@ describe('CriarEditoraUseCase', () => {
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
     } as jest.Mocked<RepositoryInterface>;
-
-    dynamoRepoMock = {
-      saveData: jest.fn(),
-      getAll: jest.fn(),
-      getData: jest.fn(),
-      queryData: jest.fn(),
-      updateByMinhotecaId: jest.fn(),
-      deleteByMinhotecaId: jest.fn(),
-      removeData: jest.fn(),
-      findByMinhotecaId: jest.fn(),
-    } as jest.Mocked<RepositoryInterface>;
-
-    // // Mock dos retornos do Adapter utilizando a entidade Editora da biblioteca core
-    // const mockEntity = Editora.create(
-    //   { ...editoraMockData } as EditoraInterface,
-    //   editoraMockData.id
-    // );
-
-    // // Forçamos a injeção do mock diretamente para evitar erros do TS/Jest caso o método esteja em uma classe Base
-    // mockEntity.toJSONString = jest.fn().mockReturnValue(JSON.stringify(editoraMockData));
-
-    // (EditoraAdapter.fromCreateDTO as jest.Mock).mockReturnValue(mockEntity);
-    // (EditoraAdapter.toDTO as jest.Mock).mockReturnValue(editoraMockData);
   });
 
   const createEvent = (body: Record<string, unknown> | null): APIGatewayEvent =>
@@ -83,10 +48,73 @@ describe('CriarEditoraUseCase', () => {
       body: body ? JSON.stringify(body) : null,
     }) as APIGatewayEvent;
 
-  describe('Cenário: Simulando MongoDB Adapter', () => {
-    it('deve criar uma editora com sucesso utilizando interface MongoDB', async () => {
+  it('deve criar um país com sucesso', async () => {
+    const mockResult: ResultType = {
+      data: { ...paisMockData },
+      limit: 1,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+    repoMock.saveData.mockResolvedValueOnce(mockResult);
+
+    const useCase = new CriarPaisUseCase(repoMock);
+    const event = createEvent(paisMockData);
+    const result = await useCase.execute(event);
+
+    expect(repoMock.saveData).toHaveBeenCalledWith(
+      'Paises',
+      expect.objectContaining({ nome: 'Brasil' })
+    );
+    expect(result.Code).toBe(201);
+    expect(result.Message).toBe('País criado com sucesso');
+    expect(result.PageData).toEqual([expect.objectContaining({ nome: 'Brasil' })]);
+  });
+
+  it('deve lançar PaisInvalidoError quando o repositório falhar', async () => {
+    repoMock.saveData.mockRejectedValueOnce(new Error('Erro de banco de dados'));
+
+    const useCase = new CriarPaisUseCase(repoMock);
+    const event = createEvent(paisMockData);
+
+    await expect(useCase.execute(event)).rejects.toThrow(
+      new PaisInvalidoError('Falha ao criar país.')
+    );
+  });
+
+  it('deve lançar PaisInvalidoError quando o body for um JSON inválido', async () => {
+    const useCase = new CriarPaisUseCase(repoMock);
+    const event = { body: '{json:"invalido"' } as APIGatewayEvent;
+
+    await expect(useCase.execute(event)).rejects.toThrow(
+      new PaisInvalidoError('Falha ao criar país.')
+    );
+    expect(repoMock.saveData).not.toHaveBeenCalled();
+  });
+
+  it('deve lançar PaisInvalidoError quando o body for nulo, resultando em erro de validação', async () => {
+    const spyAdapter = jest.spyOn(PaisAdapter, 'fromCreateDTO');
+    const useCase = new CriarPaisUseCase(repoMock);
+    const event = createEvent(null);
+
+    // A chamada com body nulo fará o adapter ser chamado com '{}', que falhará na validação da entidade.
+    await expect(useCase.execute(event)).rejects.toThrow(
+      new PaisInvalidoError('Falha ao criar país.')
+    );
+
+    expect(spyAdapter).toHaveBeenCalledWith({});
+    expect(repoMock.saveData).not.toHaveBeenCalled();
+  });
+
+  it('deve utilizar o nome da tabela da variável de ambiente se estiver definida', async () => {
+    const originalEnv = process.env.TABELA_PAISES;
+    process.env.TABELA_PAISES = 'Tabela_Mock_Pais';
+
+    try {
       const mockResult: ResultType = {
-        data: { ...editoraMockData },
+        data: { ...paisMockData },
         limit: 1,
         currentPage: 1,
         totalPages: 1,
@@ -94,82 +122,38 @@ describe('CriarEditoraUseCase', () => {
         hasNextPage: false,
         hasPrevPage: false,
       };
-      mongoRepoMock.saveData.mockResolvedValueOnce(mockResult);
+      repoMock.saveData.mockResolvedValueOnce(mockResult);
 
-      const useCase = new CriarEditoraUseCase(mongoRepoMock);
-      const event = createEvent(editoraMockData);
-      const result = await useCase.execute(event);
+      const useCase = new CriarPaisUseCase(repoMock);
+      const event = createEvent(paisMockData);
+      await useCase.execute(event);
 
-      expect(mongoRepoMock.saveData).toHaveBeenCalledWith('Editoras', editoraMockData);
-      expect(result.Code).toBe(201);
-      expect(result.PageData).toEqual([editoraMockData]);
-    });
-
-    it('deve lançar erro genérico quando o MongoDB estourar um erro (ex: Duplicated Key)', async () => {
-      const mongoError = new Error('E11000 duplicate key error collection');
-      mongoError.name = 'MongoServerError';
-      mongoRepoMock.saveData.mockRejectedValueOnce(mongoError);
-
-      const useCase = new CriarEditoraUseCase(mongoRepoMock);
-      await expect(useCase.execute(createEvent({ nome: editoraMockData.nome }))).rejects.toThrow(
-        'Falha ao criar editora.'
-      );
-      expect(mongoRepoMock.saveData).toHaveBeenCalled();
-    });
+      expect(repoMock.saveData).toHaveBeenCalledWith('Tabela_Mock_Pais', expect.any(Object));
+    } finally {
+      process.env.TABELA_PAISES = originalEnv;
+    }
   });
 
-  describe('Cenário: Simulando DynamoDB Adapter', () => {
-    it('deve criar uma editora com sucesso utilizando interface DynamoDB', async () => {
-      // DynamoDB Client .put() geralmente retorna uma resposta vazia em caso de sucesso
-      const mockResult: ResultType = {
-        data: {},
-        limit: 0,
-        currentPage: 0,
-        totalPages: 0,
-        totalDocuments: 0,
-        hasNextPage: false,
-        hasPrevPage: false,
-      };
-      dynamoRepoMock.saveData.mockResolvedValueOnce(mockResult);
-
-      const useCase = new CriarEditoraUseCase(dynamoRepoMock);
-      const event = createEvent(editoraMockData);
-      const result = await useCase.execute(event);
-
-      expect(dynamoRepoMock.saveData).toHaveBeenCalledWith('Editoras', editoraMockData);
-      expect(result.Code).toBe(201);
-      expect(result.Message).toBe('Editora criada com sucesso');
-      expect(result.PageData).toEqual([editoraMockData]);
+  it('deve lançar erro quando a conversão para DTO falhar', async () => {
+    const mockResult: ResultType = {
+      data: { ...paisMockData },
+      limit: 1,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+    repoMock.saveData.mockResolvedValueOnce(mockResult);
+    jest.spyOn(PaisAdapter, 'toDTO').mockImplementationOnce(() => {
+      throw new Error('Erro de conversão DTO');
     });
 
-    it('deve lançar erro genérico quando o DynamoDB falhar (ex: ProvisionedThroughput)', async () => {
-      const dynamoError = new Error(
-        'The level of configured provisioned throughput for the table was exceeded'
-      );
-      dynamoError.name = 'ProvisionedThroughputExceededException';
-      dynamoRepoMock.saveData.mockRejectedValueOnce(dynamoError);
+    const useCase = new CriarPaisUseCase(repoMock);
+    const event = createEvent(paisMockData);
 
-      const useCase = new CriarEditoraUseCase(dynamoRepoMock);
-      await expect(useCase.execute(createEvent({ nome: editoraMockData.nome }))).rejects.toThrow(
-        'Falha ao criar editora.'
-      );
-    });
-  });
-
-  describe('Cenários de borda', () => {
-    it('deve falhar ao tratar data.body nulo devido a erro de validação (fallback para objeto vazio)', async () => {
-      const spyAdapter = jest.spyOn(EditoraAdapter, 'fromCreateDTO');
-      const useCase = new CriarEditoraUseCase(dynamoRepoMock);
-      const event = createEvent(null);
-
-      await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar editora.');
-      expect(spyAdapter).toHaveBeenCalledWith({});
-    });
-
-    it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
-      const useCase = new CriarEditoraUseCase(mongoRepoMock);
-      const event = { body: '{ invalid json' } as APIGatewayEvent;
-      await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar editora.');
-    });
+    await expect(useCase.execute(event)).rejects.toThrow(
+      new PaisInvalidoError('Falha ao criar país.')
+    );
   });
 });

@@ -41,12 +41,12 @@ export class ObterPaisUseCase implements UseCaseInterface {
           },
         ];
         const result: ResultType = await this._repository.queryData(this._tableName, attributes);
-        if (result) {
+        if (result?.data?.length > 0) {
           const paisEntity = Pais.create(result.data[0] as PaisInterface);
           const resultDTO = PaisAdapter.toDTO(paisEntity);
           return createResult([resultDTO], 200, 'País obtido com sucesso.');
         }
-        this.logService.warn('País não encontrado.', { paisId });
+        this.logService.warn(`País com id ${paisId} não encontrado.`);
         return createResult([], 404, 'País não encontrado.');
       }
 

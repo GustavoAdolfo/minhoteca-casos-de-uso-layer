@@ -23,7 +23,6 @@ export class CriarEditoraUseCase implements UseCaseInterface {
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     try {
-      console.warn('data', data);
       const body = JSON.parse(data.body ?? '{}');
       this.logService.info('Dados recebidos para gravação', { body });
 

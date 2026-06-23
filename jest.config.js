@@ -4,6 +4,7 @@ module.exports = {
   rootDir: './',
   testMatch: ['**/tests/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  modulePathIgnorePatterns: ['<rootDir>/layer/nodejs/package.json'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/layer/nodejs/src/$1',
   },

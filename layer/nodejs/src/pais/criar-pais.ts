@@ -23,7 +23,6 @@ export class CriarPaisUseCase implements UseCaseInterface {
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     this.logService.info('🏁 Iniciando caso de uso de criar país.');
     try {
-      console.warn('data', data);
       const body = JSON.parse(data.body ?? '{}');
       this.logService.info('Dados recebidos para gravação', { body });
 
