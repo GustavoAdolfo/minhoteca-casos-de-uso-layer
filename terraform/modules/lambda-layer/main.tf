@@ -32,7 +32,7 @@ resource "null_resource" "casos_de_uso_layer_build" {
       npm run build
       rm -rf dist_layer
       mkdir -p dist_layer/nodejs
-      cp layer/nodejs/package.json layer/nodejs/package-lock.json dist_layer/nodejs/
+      cp package.json package-lock.json dist_layer/nodejs/
       cd dist_layer/nodejs
       npm ci --omit=dev
       mkdir -p node_modules/@gustavoadolfo/minhoteca-casos-de-uso-layer
