@@ -36,8 +36,11 @@ resource "null_resource" "casos_de_uso_layer_build" {
       cd dist_layer/nodejs
       npm ci --omit=dev
       mkdir -p node_modules/@gustavoadolfo/minhoteca-casos-de-uso-layer
-      cp -r ../../layer/nodejs/dist node_modules/@gustavoadolfo/minhoteca-casos-de-uso-layer/
-      cp ../../package.json node_modules/@gustavoadolfo/minhoteca-casos-de-uso-layer/
+      cp -r ../../layer/nodejs/dist/* node_modules/@gustavoadolfo/minhoteca-casos-de-uso-layer/
+      
+      # Cria um package.json simplificado e correto para o contexto da layer
+      # A entrada "main" agora aponta para o local correto dentro do pacote
+      echo '{"name": "@gustavoadolfo/minhoteca-casos-de-uso-layer", "version": "${data.external.casos_de_uso_layer_version.result.version}", "main": "index.js"}' > node_modules/@gustavoadolfo/minhoteca-casos-de-uso-layer/package.json
     EOF
   }
 }
