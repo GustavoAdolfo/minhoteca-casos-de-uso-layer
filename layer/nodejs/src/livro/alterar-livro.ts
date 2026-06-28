@@ -14,17 +14,14 @@ export class AlterarLivroUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('AlterarLivroUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     this.logService.info(
       'Início a execução do caso de uso AlterarLivroUseCase',
-      { label: 'AlterarLivroUseCase', logId: this.idExecucao },
+      { label: 'AlterarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
       { data }
     );
     try {
@@ -32,7 +29,7 @@ export class AlterarLivroUseCase implements UseCaseInterface {
       if (!dto.id || dto.id.trim() === '') {
         this.logService.error(
           'ID do livro é obrigatório para alteração.',
-          { label: 'AlterarLivroUseCase', logId: this.idExecucao },
+          { label: 'AlterarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
           undefined,
           { dto }
         );
@@ -49,7 +46,7 @@ export class AlterarLivroUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao alterar livro:',
-        { label: 'AlterarLivroUseCase', logId: this.idExecucao },
+        { label: 'AlterarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
         error as Error,
         { data }
       );

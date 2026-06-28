@@ -19,7 +19,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 describe('CriarEditoraUseCase', () => {
   let mongoRepoMock: jest.Mocked<RepositoryInterface>;
   let dynamoRepoMock: jest.Mocked<RepositoryInterface>;
-  const idExecucao = 'test-execution-id';
 
   // Utilizamos o modelo de dados real extraído do arquivo de mock
   const editoraMockData = {
@@ -97,7 +96,7 @@ describe('CriarEditoraUseCase', () => {
       };
       mongoRepoMock.saveData.mockResolvedValueOnce(mockResult);
 
-      const useCase = new CriarEditoraUseCase(mongoRepoMock, idExecucao);
+      const useCase = new CriarEditoraUseCase(mongoRepoMock);
       const event = createEvent(editoraMockData);
       const result = await useCase.execute(event);
 
@@ -111,7 +110,7 @@ describe('CriarEditoraUseCase', () => {
       mongoError.name = 'MongoServerError';
       mongoRepoMock.saveData.mockRejectedValueOnce(mongoError);
 
-      const useCase = new CriarEditoraUseCase(mongoRepoMock, idExecucao);
+      const useCase = new CriarEditoraUseCase(mongoRepoMock);
       await expect(useCase.execute(createEvent({ nome: editoraMockData.nome }))).rejects.toThrow(
         'Falha ao criar editora.'
       );
@@ -133,7 +132,7 @@ describe('CriarEditoraUseCase', () => {
       };
       dynamoRepoMock.saveData.mockResolvedValueOnce(mockResult);
 
-      const useCase = new CriarEditoraUseCase(dynamoRepoMock, idExecucao);
+      const useCase = new CriarEditoraUseCase(dynamoRepoMock);
       const event = createEvent(editoraMockData);
       const result = await useCase.execute(event);
 
@@ -150,7 +149,7 @@ describe('CriarEditoraUseCase', () => {
       dynamoError.name = 'ProvisionedThroughputExceededException';
       dynamoRepoMock.saveData.mockRejectedValueOnce(dynamoError);
 
-      const useCase = new CriarEditoraUseCase(dynamoRepoMock, idExecucao);
+      const useCase = new CriarEditoraUseCase(dynamoRepoMock);
       await expect(useCase.execute(createEvent({ nome: editoraMockData.nome }))).rejects.toThrow(
         'Falha ao criar editora.'
       );
@@ -160,7 +159,7 @@ describe('CriarEditoraUseCase', () => {
   describe('Cenários de borda', () => {
     it('deve falhar ao tratar data.body nulo devido a erro de validação (fallback para objeto vazio)', async () => {
       const spyAdapter = jest.spyOn(EditoraAdapter, 'fromCreateDTO');
-      const useCase = new CriarEditoraUseCase(dynamoRepoMock, idExecucao);
+      const useCase = new CriarEditoraUseCase(dynamoRepoMock);
       const event = createEvent(null);
 
       await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar editora.');
@@ -168,7 +167,7 @@ describe('CriarEditoraUseCase', () => {
     });
 
     it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
-      const useCase = new CriarEditoraUseCase(mongoRepoMock, idExecucao);
+      const useCase = new CriarEditoraUseCase(mongoRepoMock);
       const event = { body: '{ invalid json' } as APIGatewayEvent;
       await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar editora.');
     });

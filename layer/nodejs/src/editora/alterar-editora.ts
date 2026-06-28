@@ -14,17 +14,14 @@ export class AlterarEditoraUseCase implements UseCaseInterface {
   private _tabelaEditoras: string;
   private logService = new LogService('AlterarEditoraUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaEditoras = process.env.TABELA_EDITORAS ?? 'Editoras';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     this.logService.info(
       'Início a execução do caso de uso AlterarEditoraUseCase',
-      { label: 'AlterarEditoraUseCase', logId: this.idExecucao },
+      { label: 'AlterarEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
       { data }
     );
     try {
@@ -32,7 +29,7 @@ export class AlterarEditoraUseCase implements UseCaseInterface {
       if (!dto.id || dto.id.trim() === '') {
         this.logService.error(
           'ID da editora é obrigatório para alteração.',
-          { label: 'AlterarEditoraUseCase', logId: this.idExecucao },
+          { label: 'AlterarEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
           undefined,
           { dto }
         );
@@ -51,7 +48,7 @@ export class AlterarEditoraUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao alterar editora:',
-        { label: 'AlterarEditoraUseCase', logId: this.idExecucao },
+        { label: 'AlterarEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
         error as Error,
         { data }
       );

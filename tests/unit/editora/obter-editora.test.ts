@@ -29,7 +29,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ObterEditoraUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  const idExecucao = 'test-execution-id';
 
   const editoraMockData = {
     id: '1234567890',
@@ -79,7 +78,7 @@ describe('ObterEditoraUseCase', () => {
     repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: editoraMockData } as ResultType);
     repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType); // Mock para livros
 
-    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ObterEditoraUseCase(repoMock);
     const event = createEvent({ id: '1234567890' });
 
     const result = await useCase.execute(event);
@@ -96,7 +95,7 @@ describe('ObterEditoraUseCase', () => {
     repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: editoraMockData } as ResultType);
     repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType); // Mock para livros
 
-    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ObterEditoraUseCase(repoMock);
     const event = createEvent(null, { id: '9999' });
 
     await useCase.execute(event);
@@ -108,7 +107,7 @@ describe('ObterEditoraUseCase', () => {
     // Simulando retorno null que aciona a branch `if (result)` false
     repoMock.findByMinhotecaId.mockResolvedValueOnce(null as unknown as ResultType);
 
-    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ObterEditoraUseCase(repoMock);
     const event = createEvent({ id: 'nao-existe' });
 
     const result = await useCase.execute(event);
@@ -120,7 +119,7 @@ describe('ObterEditoraUseCase', () => {
   });
 
   it('deve lançar erro genérico no log (e retornar falha) quando nenhum ID for informado', async () => {
-    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ObterEditoraUseCase(repoMock);
     const event = createEvent(null, null);
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter editora.');
@@ -129,7 +128,7 @@ describe('ObterEditoraUseCase', () => {
   it('deve lançar erro genérico quando o repositório falhar internamente', async () => {
     repoMock.findByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
 
-    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ObterEditoraUseCase(repoMock);
     const event = createEvent({ id: '123' });
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter editora.');
@@ -143,7 +142,7 @@ describe('ObterEditoraUseCase', () => {
     try {
       repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: editoraMockData } as ResultType);
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
-      const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
+      const useCase = new ObterEditoraUseCase(repoMock);
 
       await useCase.execute(createEvent({ id: '999' }));
       expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Editora_Obter', '999');
