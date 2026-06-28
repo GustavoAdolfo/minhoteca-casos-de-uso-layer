@@ -20,20 +20,17 @@ export class ObterEditoraUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('ObterEditoraUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaEditoras = process.env.TABELA_EDITORAS ?? 'Editoras';
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     this.logService.info(
       'Início a execução do caso de uso ObterEditoraUseCase',
       {
         label: 'ObterEditoraUseCase',
-        logId: this.idExecucao,
+        ...(idExecucao && { logId: idExecucao }),
       },
       { data }
     );
@@ -49,14 +46,18 @@ export class ObterEditoraUseCase implements UseCaseInterface {
           {
             editoraId,
             label: 'ObterEditoraUseCase',
-            logId: this.idExecucao,
+            ...(idExecucao && { logId: idExecucao }),
           },
           { result }
         );
         if (result?.data) {
           this.logService.info(
             'Criando entidade Editora a partir dos dados recuperados',
-            { label: 'ObterEditoraUseCase', editoraId, logId: this.idExecucao },
+            {
+              label: 'ObterEditoraUseCase',
+              editoraId,
+              ...(idExecucao && { logId: idExecucao }),
+            },
             { result }
           );
           const editoraEntity = Editora.create(
@@ -65,7 +66,11 @@ export class ObterEditoraUseCase implements UseCaseInterface {
           );
           this.logService.info(
             'Convertendo Editora para DTO',
-            { label: 'ObterEditoraUseCase', editoraId, logId: this.idExecucao },
+            {
+              label: 'ObterEditoraUseCase',
+              editoraId,
+              ...(idExecucao && { logId: idExecucao }),
+            },
             { result }
           );
           const editora = EditoraAdapter.toDTO(editoraEntity);
@@ -73,7 +78,7 @@ export class ObterEditoraUseCase implements UseCaseInterface {
           this.logService.info('Buscando dados de livros associados à editora', {
             label: 'ObterEditoraUseCase',
             editoraId,
-            logId: this.idExecucao,
+            ...(idExecucao && { logId: idExecucao }),
           });
 
           const livros = await this._repository.getAll(this._tabelaLivros, {
@@ -101,7 +106,7 @@ export class ObterEditoraUseCase implements UseCaseInterface {
         this.logService.warn('Editora não encontrada.', {
           editoraId,
           label: 'ObterEditoraUseCase',
-          logId: this.idExecucao,
+          ...(idExecucao && { logId: idExecucao }),
         });
         return createResult([], 404, 'Editora não encontrada.');
       }
@@ -110,7 +115,7 @@ export class ObterEditoraUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao obter editora:',
-        { label: 'ObterEditoraUseCase', logId: this.idExecucao },
+        { label: 'ObterEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
         error as Error
       );
       throw new EditoraInvalidaError('Falha ao obter editora.');

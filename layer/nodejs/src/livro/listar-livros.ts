@@ -16,18 +16,15 @@ export class ListarLivroUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('ListarLivroUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     try {
       this.logService.info(
         '✅ Início da execução do caso de uso ListarLivroUseCase',
-        { label: 'ListarLivroUseCase', logId: this.idExecucao },
+        { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
         { data }
       );
 
@@ -41,7 +38,7 @@ export class ListarLivroUseCase implements UseCaseInterface {
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
       this.logService.info(
         '🔍 Informações para buscar livros definidas.',
-        { label: 'ListarLivroUseCase', logId: this.idExecucao },
+        { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
         {
           page,
           limit,
@@ -60,7 +57,7 @@ export class ListarLivroUseCase implements UseCaseInterface {
         '✅ Dados de livros recuperados',
         {
           label: 'ListarLivroUseCase',
-          logId: this.idExecucao,
+          ...(idExecucao && { logId: idExecucao }),
           total: result.totalDocuments,
         },
         { result }
@@ -71,7 +68,7 @@ export class ListarLivroUseCase implements UseCaseInterface {
       );
       this.logService.info(
         '✅ Entidades de livros criadas.',
-        { label: 'ListarLivroUseCase', logId: this.idExecucao },
+        { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
         { entities }
       );
 
@@ -95,7 +92,7 @@ export class ListarLivroUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao listar livros:',
-        { label: 'ListarLivroUseCase', logId: this.idExecucao },
+        { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
         error as Error,
         { data }
       );

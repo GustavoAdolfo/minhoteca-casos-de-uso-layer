@@ -16,18 +16,15 @@ export class ListarEditoraUseCase implements UseCaseInterface {
   private _tabelaEditoras: string;
   private logService = new LogService('ListarEditoraUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaEditoras = process.env.TABELA_EDITORAS ?? 'Editoras';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     try {
       this.logService.info(
         '✅ Início da execução do caso de uso ListarEditoraUseCase',
-        { label: 'ListarEditoraUseCase', logId: this.idExecucao },
+        { label: 'ListarEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
         { data }
       );
 
@@ -41,7 +38,7 @@ export class ListarEditoraUseCase implements UseCaseInterface {
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
       this.logService.info(
         '🔍 Informações para buscar editoras definidas.',
-        { label: 'ListarEditoraUseCase', logId: this.idExecucao },
+        { label: 'ListarEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
         {
           page,
           limit,
@@ -60,7 +57,7 @@ export class ListarEditoraUseCase implements UseCaseInterface {
         '✅ Dados de editoras recuperados',
         {
           label: 'ListarEditoraUseCase',
-          logId: this.idExecucao,
+          ...(idExecucao && { logId: idExecucao }),
           total: result.totalDocuments,
         },
         { result }
@@ -71,7 +68,7 @@ export class ListarEditoraUseCase implements UseCaseInterface {
       );
       this.logService.info(
         '✅ Entidades de editoras criadas.',
-        { label: 'ListarEditoraUseCase', logId: this.idExecucao },
+        { label: 'ListarEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
         { entities }
       );
 
@@ -95,7 +92,7 @@ export class ListarEditoraUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao listar editoras:',
-        { label: 'ListarEditoraUseCase', logId: this.idExecucao },
+        { label: 'ListarEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
         error as Error,
         { data }
       );

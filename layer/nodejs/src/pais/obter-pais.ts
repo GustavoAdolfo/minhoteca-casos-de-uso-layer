@@ -25,7 +25,7 @@ export class ObterPaisUseCase implements UseCaseInterface {
     this._tableName = process.env.TABELA_PAISES || 'Paises';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     try {
       const paisId = data.pathParameters?.id ?? data.queryStringParameters?.id;
       if (paisId) {
@@ -52,7 +52,11 @@ export class ObterPaisUseCase implements UseCaseInterface {
 
       throw new PaisInvalidoError('ID do país não informado.');
     } catch (error) {
-      this.logService.error('Erro ao obter país:', { data }, error as Error);
+      this.logService.error(
+        'Erro ao obter país:',
+        { ...(idExecucao && { logId: idExecucao }), data },
+        error as Error
+      );
       throw new PaisInvalidoError('Falha ao obter país.');
     }
   }

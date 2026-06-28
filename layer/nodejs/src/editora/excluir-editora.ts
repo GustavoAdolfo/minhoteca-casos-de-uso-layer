@@ -13,25 +13,22 @@ export class ExcluirEditoraUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('ExcluirEditoraUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaEditoras = process.env.TABELA_EDITORAS ?? 'Editoras';
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     this.logService.info(
       '🏁 Iniciando caso de uso de excluir editora.',
-      { label: 'ExcluirEditoraUseCase', logId: this.idExecucao },
+      { label: 'ExcluirEditoraUseCase', ...(idExecucao && { logId: idExecucao }) },
       { data }
     );
     const editoraId = data.queryStringParameters?.id;
     if (!editoraId) {
       this.logService.warn('ID da editora não fornecido.', {
         label: 'ExcluirEditoraUseCase',
-        logId: this.idExecucao,
+        ...(idExecucao && { logId: idExecucao }),
       });
       throw new EditoraInvalidaError('ID da editora é obrigatório para exclusão.');
     }
@@ -44,7 +41,7 @@ export class ExcluirEditoraUseCase implements UseCaseInterface {
         `Não é possível excluir a editora ${editoraId} porque existem livros associados a ela.`,
         {
           label: 'ExcluirEditoraUseCase',
-          logId: this.idExecucao,
+          ...(idExecucao && { logId: idExecucao }),
           editoraId,
         }
       );
@@ -62,7 +59,11 @@ export class ExcluirEditoraUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao excluir editora:',
-        { label: 'ExcluirEditoraUseCase', logId: this.idExecucao, editoraId },
+        {
+          label: 'ExcluirEditoraUseCase',
+          ...(idExecucao && { logId: idExecucao }),
+          editoraId,
+        },
         error as Error,
         { data }
       );

@@ -22,9 +22,15 @@ export class ListarPaisUseCase implements UseCaseInterface {
     this._tableName = process.env.TABELA_PAISES || 'Paises';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     try {
-      this.logService.info('✅ Início da execução do caso de uso ListarPaisUseCase', {}, { data });
+      this.logService.info(
+        '✅ Início da execução do caso de uso ListarPaisUseCase',
+        {
+          ...(idExecucao && { logId: idExecucao }),
+        },
+        { data }
+      );
 
       const page = data.queryStringParameters?.page
         ? parseInt(data.queryStringParameters.page, 10)
@@ -56,7 +62,13 @@ export class ListarPaisUseCase implements UseCaseInterface {
       );
 
       const entities = result.data.map((item: PaisInterface) => Pais.create(item));
-      this.logService.info('✅ Entidades de países criadas.', {}, { entities });
+      this.logService.info(
+        '✅ Entidades de países criadas.',
+        {
+          ...(idExecucao && { logId: idExecucao }),
+        },
+        { entities }
+      );
 
       const paises: PaisDTO[] = PaisAdapter.toDTOList(entities);
       return createResult(

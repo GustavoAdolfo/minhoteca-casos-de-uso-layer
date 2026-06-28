@@ -24,7 +24,7 @@ export class AlterarAutorUseCase implements UseCaseInterface {
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     this.logService.info(
       'Início a execução do caso de uso AlterarAutorUseCase',
-      { label: 'AlterarAutorUseCase', logId: this.idExecucao },
+      { label: 'AlterarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
       { data }
     );
     try {
@@ -34,7 +34,7 @@ export class AlterarAutorUseCase implements UseCaseInterface {
           'ID do Autor é obrigatório para alteração.',
           {
             label: 'AlterarAutorUseCase',
-            logId: this.idExecucao,
+            ...(this.idExecucao && { logId: this.idExecucao }),
           },
           undefined,
           { dto }
@@ -54,7 +54,7 @@ export class AlterarAutorUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao alterar Autor:',
-        { label: 'AlterarAutorUseCase', logId: this.idExecucao },
+        { label: 'AlterarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         error as Error,
         { data }
       );

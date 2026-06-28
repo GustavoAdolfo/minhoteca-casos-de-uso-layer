@@ -18,11 +18,15 @@ export class ExcluirPaisUseCase implements UseCaseInterface {
     this._tabelaAutores = process.env.TABELA_AUTORES || 'Autores';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
-    this.logService.info('🏁 Iniciando caso de uso de excluir país.');
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
+    this.logService.info('🏁 Iniciando caso de uso de excluir país.', {
+      ...(idExecucao && { logId: idExecucao }),
+    });
     const paisId = data.queryStringParameters?.id;
     if (!paisId) {
-      this.logService.warn('ID do país não fornecido.');
+      this.logService.warn('ID do país não fornecido.', {
+        ...(idExecucao && { logId: idExecucao }),
+      });
       // TODO: Necessário implementação de "PaisInvalidaError" no core-layer para tratar casos de exclusão de país com autores associados.,
       // throw new PaisInvalidaError('ID do país é obrigatório para exclusão.');
       throw new PaisInvalidoError('ID do país é obrigatório para exclusão.');
@@ -33,7 +37,10 @@ export class ExcluirPaisUseCase implements UseCaseInterface {
     });
     if (autoresDoPais?.data && autoresDoPais?.data.length > 0) {
       this.logService.warn(
-        `Não é possível excluir o país ${paisId} porque existem autores associados a ele.`
+        `Não é possível excluir o país ${paisId} porque existem autores associados a ele.`,
+        {
+          ...(idExecucao && { logId: idExecucao }),
+        }
       );
       // throw new PaisInvalidaError('Não é possível excluir o país porque existem autores associados a ele.');
       throw new PaisInvalidoError(
@@ -48,7 +55,11 @@ export class ExcluirPaisUseCase implements UseCaseInterface {
       );
       return createResult(result.data, 200, 'País excluído com sucesso.');
     } catch (error) {
-      this.logService.error('Erro ao excluir país:', { data }, error as Error);
+      this.logService.error(
+        'Erro ao excluir país:',
+        { ...(idExecucao && { logId: idExecucao }), data },
+        error as Error
+      );
       throw new PaisInvalidoError('Falha ao excluir país.');
     }
   }

@@ -33,7 +33,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
       'Início a execução do caso de uso ObterAutorUseCase',
       {
         label: 'ObterAutorUseCase',
-        logId: this.idExecucao,
+        ...(this.idExecucao && { logId: this.idExecucao }),
       },
       { data }
     );
@@ -49,14 +49,18 @@ export class ObterAutorUseCase implements UseCaseInterface {
           {
             autorId,
             label: 'ObterAutorUseCase',
-            logId: this.idExecucao,
+            ...(this.idExecucao && { logId: this.idExecucao }),
           },
           { result }
         );
         if (result?.data) {
           this.logService.info(
             'Criando entidade Autor a partir dos dados recuperados',
-            { label: 'ObterAutorUseCase', autorId, logId: this.idExecucao },
+            {
+              label: 'ObterAutorUseCase',
+              autorId,
+              ...(this.idExecucao && { logId: this.idExecucao }),
+            },
             { result }
           );
           const autorEntity = Autor.create(
@@ -65,7 +69,11 @@ export class ObterAutorUseCase implements UseCaseInterface {
           );
           this.logService.info(
             'Convertendo Autor para DTO',
-            { label: 'ObterAutorUseCase', autorId, logId: this.idExecucao },
+            {
+              label: 'ObterAutorUseCase',
+              autorId,
+              ...(this.idExecucao && { logId: this.idExecucao }),
+            },
             { result }
           );
           const autor = AutorAdapter.toDTO(autorEntity);
@@ -73,7 +81,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
           this.logService.info('Buscando dados de livros associados ao autor', {
             label: 'ObterAutorUseCase',
             autorId,
-            logId: this.idExecucao,
+            ...(this.idExecucao && { logId: this.idExecucao }),
           });
 
           const livros = await this._repository.getAll(this._tabelaLivros, {
@@ -100,7 +108,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
                 label: 'ObterAutorUseCase',
                 autorId,
                 livrosId: autor.livros.map((livro) => livro.id).join(', '),
-                logId: this.idExecucao,
+                ...(this.idExecucao && { logId: this.idExecucao }),
               },
               { autor }
             );
@@ -112,7 +120,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
         this.logService.warn('Autor não encontrado.', {
           autorId,
           label: 'ObterAutorUseCase',
-          logId: this.idExecucao,
+          ...(this.idExecucao && { logId: this.idExecucao }),
         });
         return createResult([], 404, 'Autor não encontrado.');
       }
@@ -121,7 +129,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao obter autor:',
-        { label: 'ObterAutorUseCase', logId: this.idExecucao, data },
+        { label: 'ObterAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }), data },
         error as Error
       );
       throw new AutorInvalidoError('Falha ao obter autor.');

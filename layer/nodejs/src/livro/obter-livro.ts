@@ -19,20 +19,17 @@ export class ObterLivroUseCase implements UseCaseInterface {
   private _tabelaAutores: string;
   private logService = new LogService('ObterLivroUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
     this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     this.logService.info(
       'Início a execução do caso de uso ObterLivroUseCase',
       {
         label: 'ObterLivroUseCase',
-        logId: this.idExecucao,
+        ...(idExecucao && { logId: idExecucao }),
       },
       { data }
     );
@@ -48,14 +45,18 @@ export class ObterLivroUseCase implements UseCaseInterface {
           {
             livroId,
             label: 'ObterLivroUseCase',
-            logId: this.idExecucao,
+            ...(idExecucao && { logId: idExecucao }),
           },
           { result }
         );
         if (result?.data) {
           this.logService.info(
             'Criando entidade Livro a partir dos dados recuperados',
-            { label: 'ObterLivroUseCase', livroId, logId: this.idExecucao },
+            {
+              label: 'ObterLivroUseCase',
+              livroId,
+              ...(idExecucao && { logId: idExecucao }),
+            },
             { result }
           );
           const livroEntity = Livro.create(
@@ -64,7 +65,11 @@ export class ObterLivroUseCase implements UseCaseInterface {
           );
           this.logService.info(
             'Convertendo Livro para DTO',
-            { label: 'ObterLivroUseCase', livroId, logId: this.idExecucao },
+            {
+              label: 'ObterLivroUseCase',
+              livroId,
+              ...(idExecucao && { logId: idExecucao }),
+            },
             { result }
           );
           const livro = LivroAdapter.toDTO(livroEntity);
@@ -73,7 +78,7 @@ export class ObterLivroUseCase implements UseCaseInterface {
             label: 'ObterLivroUseCase',
             livroId,
             autorId: livro.autorId,
-            logId: this.idExecucao,
+            ...(idExecucao && { logId: idExecucao }),
           });
           const autor = await this._repository.findByMinhotecaId(
             this._tabelaAutores,
@@ -85,7 +90,7 @@ export class ObterLivroUseCase implements UseCaseInterface {
               label: 'ObterLivroUseCase',
               livroId,
               autorId: livro.autorId,
-              logId: this.idExecucao,
+              ...(idExecucao && { logId: idExecucao }),
             },
             { autor }
           );
@@ -104,7 +109,7 @@ export class ObterLivroUseCase implements UseCaseInterface {
                 label: 'ObterLivroUseCase',
                 livroId,
                 autorId: livro.autorId,
-                logId: this.idExecucao,
+                ...(idExecucao && { logId: idExecucao }),
               },
               { livro }
             );
@@ -116,7 +121,7 @@ export class ObterLivroUseCase implements UseCaseInterface {
         this.logService.warn('Livro não encontrado.', {
           livroId,
           label: 'ObterLivroUseCase',
-          logId: this.idExecucao,
+          ...(idExecucao && { logId: idExecucao }),
         });
         return createResult([], 404, 'Livro não encontrado.');
       }
@@ -125,7 +130,7 @@ export class ObterLivroUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Falha ao obter livro:',
-        { label: 'ObterLivroUseCase', logId: this.idExecucao },
+        { label: 'ObterLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
         error as Error,
         { data }
       );

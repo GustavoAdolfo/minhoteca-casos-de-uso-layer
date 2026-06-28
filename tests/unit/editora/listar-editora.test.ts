@@ -18,7 +18,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 describe('ListarEditoraUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
   let consoleErrorSpy: jest.SpyInstance;
-  const idExecucao = 'test-execution-id';
 
   const editoraMockData = {
     id: '1234567890',
@@ -71,7 +70,7 @@ describe('ListarEditoraUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ListarEditoraUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Editoras', {
@@ -99,7 +98,7 @@ describe('ListarEditoraUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ListarEditoraUseCase(repoMock);
     const event = createEvent({ page: '2', limit: '5', sortBy: 'pais', sortOrder: 'desc' });
     const result = await useCase.execute(event);
 
@@ -125,7 +124,7 @@ describe('ListarEditoraUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ListarEditoraUseCase(repoMock);
     // Passando valores vazios para forçar o condicional (sortBy && sortOrder) a ser falso
     const event = createEvent({ page: '2', limit: '5', sortBy: '', sortOrder: '' });
     const result = await useCase.execute(event);
@@ -146,7 +145,7 @@ describe('ListarEditoraUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ListarEditoraUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     expect(result.Code).toBe(204);
@@ -161,7 +160,7 @@ describe('ListarEditoraUseCase', () => {
     } as ResultType;
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ListarEditoraUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     // Como default do useCase: page = 1
@@ -183,7 +182,7 @@ describe('ListarEditoraUseCase', () => {
 
     repoMock.getAll.mockResolvedValueOnce({ data: [dataSemId] } as ResultType);
 
-    const useCase = new ListarEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ListarEditoraUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     expect(result.Code).toBe(200);
@@ -197,7 +196,7 @@ describe('ListarEditoraUseCase', () => {
 
     try {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
-      const useCase = new ListarEditoraUseCase(repoMock, idExecucao);
+      const useCase = new ListarEditoraUseCase(repoMock);
 
       await useCase.execute(createEvent(null));
       expect(repoMock.getAll).toHaveBeenCalledWith(
@@ -212,7 +211,7 @@ describe('ListarEditoraUseCase', () => {
   it('deve capturar e relançar erro padrão quando ocorrer uma falha', async () => {
     repoMock.getAll.mockRejectedValueOnce(new Error('Erro interno do DB'));
 
-    const useCase = new ListarEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ListarEditoraUseCase(repoMock);
     await expect(useCase.execute(createEvent(null))).rejects.toThrow('Falha ao listar editoras.');
   });
 });

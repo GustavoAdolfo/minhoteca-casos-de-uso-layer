@@ -29,7 +29,7 @@ export class ListarAutorUseCase implements UseCaseInterface {
     try {
       this.logService.info(
         '✅ Início da execução do caso de uso ListarAutorUseCase',
-        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        { label: 'ListarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         { data }
       );
 
@@ -43,7 +43,7 @@ export class ListarAutorUseCase implements UseCaseInterface {
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
       this.logService.info(
         '🔍 Informações para buscar autores definidas.',
-        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        { label: 'ListarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         {
           page,
           limit,
@@ -62,7 +62,7 @@ export class ListarAutorUseCase implements UseCaseInterface {
         '✅ Dados de autores recuperados',
         {
           label: 'ListarAutorUseCase',
-          logId: this.idExecucao,
+          ...(this.idExecucao && { logId: this.idExecucao }),
           total: result.totalDocuments,
         },
         { result }
@@ -73,7 +73,7 @@ export class ListarAutorUseCase implements UseCaseInterface {
       );
       this.logService.info(
         '✅ Entidades de autores criadas.',
-        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        { label: 'ListarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         { entities }
       );
 
@@ -97,9 +97,8 @@ export class ListarAutorUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao listar autores:',
-        { label: 'ListarAutorUseCase', logId: this.idExecucao },
-        error as Error,
-        { data }
+        { label: 'ListarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }), data },
+        error as Error
       );
       throw new AutorInvalidoError('Falha ao listar autores.');
     }

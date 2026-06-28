@@ -24,42 +24,42 @@ export class CriarAutorUseCase implements UseCaseInterface {
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     this.logService.info(
       'Iniciando caso de uso de criar autor.',
-      { label: 'CriarAutorUseCase', logId: this.idExecucao },
+      { label: 'CriarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
       { data }
     );
     try {
       const body = JSON.parse(data.body ?? '{}');
       this.logService.info(
         'Dados recebidos para gravação',
-        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { label: 'CriarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         { body }
       );
 
       const entity = AutorAdapter.fromCreateDTO(body);
       this.logService.info(
         'Dados convertidos para entidade',
-        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { label: 'CriarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         { entity }
       );
 
       await this._repository.saveData(this._tabelaAutores, JSON.parse(entity.toJSONString()));
       this.logService.info(
         'Autor gravado com sucesso',
-        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { label: 'CriarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         { entity }
       );
       const autorDTO: AutorDTO = AutorAdapter.toDTO(entity);
 
       this.logService.info(
         'Dados convertidos para DTO de retorno',
-        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { label: 'CriarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         { autorDTO }
       );
       return createResult([autorDTO], 201, 'Autor criado com sucesso');
     } catch (error) {
       this.logService.error(
         'Erro ao criar autor:',
-        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { label: 'CriarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
         error as Error,
         { data }
       );

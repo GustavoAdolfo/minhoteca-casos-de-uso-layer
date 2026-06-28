@@ -18,7 +18,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 describe('ListarLivroUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
   let consoleErrorSpy: jest.SpyInstance;
-  const idExecucao = 'test-execution-id';
 
   const livroMockData = {
     id: '1cc97df5bfa64cf9b5ff44734a7e4521',
@@ -82,7 +81,7 @@ describe('ListarLivroUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarLivroUseCase(repoMock, idExecucao);
+    const useCase = new ListarLivroUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Livros', {
@@ -110,7 +109,7 @@ describe('ListarLivroUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarLivroUseCase(repoMock, idExecucao);
+    const useCase = new ListarLivroUseCase(repoMock);
     const event = createEvent({ page: '2', limit: '5', sortBy: 'titulo', sortOrder: 'desc' });
     const result = await useCase.execute(event);
 
@@ -136,7 +135,7 @@ describe('ListarLivroUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarLivroUseCase(repoMock, idExecucao);
+    const useCase = new ListarLivroUseCase(repoMock);
     // Passando valores vazios para forçar o condicional (sortBy && sortOrder) a ser falso
     const event = createEvent({ page: '2', limit: '5', sortBy: '', sortOrder: '' });
     const result = await useCase.execute(event);
@@ -157,7 +156,7 @@ describe('ListarLivroUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarLivroUseCase(repoMock, idExecucao);
+    const useCase = new ListarLivroUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     expect(result.Code).toBe(204);
@@ -172,7 +171,7 @@ describe('ListarLivroUseCase', () => {
     } as ResultType;
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarLivroUseCase(repoMock, idExecucao);
+    const useCase = new ListarLivroUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     // Como default do useCase: page = 1
@@ -196,7 +195,7 @@ describe('ListarLivroUseCase', () => {
 
     repoMock.getAll.mockResolvedValueOnce({ data: [dataSemId] } as ResultType);
 
-    const useCase = new ListarLivroUseCase(repoMock, idExecucao);
+    const useCase = new ListarLivroUseCase(repoMock);
     const result = await useCase.execute(createEvent(null));
 
     expect(result.Code).toBe(200);
@@ -210,7 +209,7 @@ describe('ListarLivroUseCase', () => {
 
     try {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
-      const useCase = new ListarLivroUseCase(repoMock, idExecucao);
+      const useCase = new ListarLivroUseCase(repoMock);
 
       await useCase.execute(createEvent(null));
       expect(repoMock.getAll).toHaveBeenCalledWith('Tabela_Mock_Listar_Livros', expect.any(Object));
@@ -222,7 +221,7 @@ describe('ListarLivroUseCase', () => {
   it('deve capturar e relançar erro padrão quando ocorrer uma falha', async () => {
     repoMock.getAll.mockRejectedValueOnce(new Error('Erro interno do DB'));
 
-    const useCase = new ListarLivroUseCase(repoMock, idExecucao);
+    const useCase = new ListarLivroUseCase(repoMock);
     await expect(useCase.execute(createEvent(null))).rejects.toThrow('Falha ao listar livros.');
   });
 });
