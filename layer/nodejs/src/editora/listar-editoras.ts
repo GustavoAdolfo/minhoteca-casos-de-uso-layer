@@ -13,20 +13,21 @@ import { APIGatewayEvent } from 'aws-lambda';
 import { createResult } from '../util';
 
 export class ListarEditoraUseCase implements UseCaseInterface {
-  private _tableName: string;
+  private _tabelaEditoras: string;
   private logService = new LogService('ListarEditoraUseCase');
-  /**
-   *
-   */
-  constructor(private _repository: RepositoryInterface) {
-    this._tableName = process.env.TABELA_EDITORAS || 'Editoras';
+
+  constructor(
+    private _repository: RepositoryInterface,
+    private idExecucao?: string
+  ) {
+    this._tabelaEditoras = process.env.TABELA_EDITORAS ?? 'Editoras';
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     try {
       this.logService.info(
         '✅ Início da execução do caso de uso ListarEditoraUseCase',
-        {},
+        { label: 'ListarEditoraUseCase', logId: this.idExecucao },
         { data }
       );
 
@@ -38,14 +39,18 @@ export class ListarEditoraUseCase implements UseCaseInterface {
         : 10;
       const sortBy = data.queryStringParameters?.sortBy || 'nome';
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
-      this.logService.info('🔍 Informações para buscar editoras definidas.', {
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      });
+      this.logService.info(
+        '🔍 Informações para buscar editoras definidas.',
+        { label: 'ListarEditoraUseCase', logId: this.idExecucao },
+        {
+          page,
+          limit,
+          sortBy,
+          sortOrder,
+        }
+      );
 
-      const result: ResultType = await this._repository.getAll(this._tableName, {
+      const result: ResultType = await this._repository.getAll(this._tabelaEditoras, {
         page,
         limit,
         sortBy,
@@ -54,6 +59,8 @@ export class ListarEditoraUseCase implements UseCaseInterface {
       this.logService.info(
         '✅ Dados de editoras recuperados',
         {
+          label: 'ListarEditoraUseCase',
+          logId: this.idExecucao,
           total: result.totalDocuments,
         },
         { result }
@@ -62,7 +69,11 @@ export class ListarEditoraUseCase implements UseCaseInterface {
       const entities = result.data.map((item: EditoraInterface) =>
         Editora.create(item, Object.getOwnPropertyDescriptor(item, 'id')?.value ?? '')
       );
-      this.logService.info('✅ Entidades de editoras criadas.', {}, { entities });
+      this.logService.info(
+        '✅ Entidades de editoras criadas.',
+        { label: 'ListarEditoraUseCase', logId: this.idExecucao },
+        { entities }
+      );
 
       const editoras: EditoraDTO[] = EditoraAdapter.toDTOList(entities);
       return createResult(
@@ -82,7 +93,12 @@ export class ListarEditoraUseCase implements UseCaseInterface {
         }
       );
     } catch (error) {
-      this.logService.error('Erro ao listar editoras:', error as Error);
+      this.logService.error(
+        'Erro ao listar editoras:',
+        { label: 'ListarEditoraUseCase', logId: this.idExecucao },
+        error as Error,
+        { data }
+      );
       throw new EditoraInvalidaError('Falha ao listar editoras.');
     }
   }

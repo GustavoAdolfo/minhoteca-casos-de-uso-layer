@@ -18,13 +18,20 @@ export class ListarAutorUseCase implements UseCaseInterface {
   /**
    *
    */
-  constructor(private _repository: RepositoryInterface) {
-    this._tabelaAutores = process.env.TABELA_AUTORES || 'Autores';
+  constructor(
+    private _repository: RepositoryInterface,
+    private idExecucao?: string
+  ) {
+    this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     try {
-      this.logService.info('✅ Início da execução do caso de uso ListarAutorUseCase', {}, { data });
+      this.logService.info(
+        '✅ Início da execução do caso de uso ListarAutorUseCase',
+        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        { data }
+      );
 
       const page = data.queryStringParameters?.page
         ? parseInt(data.queryStringParameters.page, 10)
@@ -34,12 +41,16 @@ export class ListarAutorUseCase implements UseCaseInterface {
         : 10;
       const sortBy = data.queryStringParameters?.sortBy || 'nome';
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
-      this.logService.info('🔍 Informações para buscar autores definidas.', {
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      });
+      this.logService.info(
+        '🔍 Informações para buscar autores definidas.',
+        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        {
+          page,
+          limit,
+          sortBy,
+          sortOrder,
+        }
+      );
 
       const result: ResultType = await this._repository.getAll(this._tabelaAutores, {
         page,
@@ -50,6 +61,8 @@ export class ListarAutorUseCase implements UseCaseInterface {
       this.logService.info(
         '✅ Dados de autores recuperados',
         {
+          label: 'ListarAutorUseCase',
+          logId: this.idExecucao,
           total: result.totalDocuments,
         },
         { result }
@@ -58,7 +71,11 @@ export class ListarAutorUseCase implements UseCaseInterface {
       const entities = result.data.map((item: AutorInterface) =>
         Autor.create(item, Object.getOwnPropertyDescriptor(item, 'id')?.value ?? '')
       );
-      this.logService.info('✅ Entidades de autores criadas.', {}, { entities });
+      this.logService.info(
+        '✅ Entidades de autores criadas.',
+        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        { entities }
+      );
 
       const autores: AutorDTO[] = AutorAdapter.toDTOList(entities);
       return createResult(
@@ -78,7 +95,12 @@ export class ListarAutorUseCase implements UseCaseInterface {
         }
       );
     } catch (error) {
-      this.logService.error('Erro ao listar autores:', {}, error as Error);
+      this.logService.error(
+        'Erro ao listar autores:',
+        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        error as Error,
+        { data }
+      );
       throw new AutorInvalidoError('Falha ao listar autores.');
     }
   }

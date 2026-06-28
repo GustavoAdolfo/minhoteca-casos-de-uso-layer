@@ -14,27 +14,55 @@ export class CriarAutorUseCase implements UseCaseInterface {
   private _tabelaAutores: string;
   private logService = new LogService('CriarAutorUseCase');
 
-  constructor(private _repository: RepositoryInterface) {
-    this._tabelaAutores = process.env.TABELA_AUTORES || 'Autores';
+  constructor(
+    private _repository: RepositoryInterface,
+    private idExecucao?: string
+  ) {
+    this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
-    this.logService.info('Iniciando caso de uso de criar autor.');
+    this.logService.info(
+      'Iniciando caso de uso de criar autor.',
+      { label: 'CriarAutorUseCase', logId: this.idExecucao },
+      { data }
+    );
     try {
       const body = JSON.parse(data.body ?? '{}');
-      this.logService.info('Dados recebidos para gravação', {}, { body });
+      this.logService.info(
+        'Dados recebidos para gravação',
+        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { body }
+      );
 
       const entity = AutorAdapter.fromCreateDTO(body);
-      this.logService.info('Dados convertidos para entidade', { entity });
+      this.logService.info(
+        'Dados convertidos para entidade',
+        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { entity }
+      );
 
       await this._repository.saveData(this._tabelaAutores, JSON.parse(entity.toJSONString()));
-      this.logService.info('Autor gravado com sucesso', { entity });
+      this.logService.info(
+        'Autor gravado com sucesso',
+        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { entity }
+      );
       const autorDTO: AutorDTO = AutorAdapter.toDTO(entity);
 
-      this.logService.info('Dados convertidos para DTO de retorno', { autorDTO });
+      this.logService.info(
+        'Dados convertidos para DTO de retorno',
+        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        { autorDTO }
+      );
       return createResult([autorDTO], 201, 'Autor criado com sucesso');
     } catch (error) {
-      this.logService.error('Erro ao criar autor:', {}, error as Error);
+      this.logService.error(
+        'Erro ao criar autor:',
+        { label: 'CriarAutorUseCase', logId: this.idExecucao },
+        error as Error,
+        { data }
+      );
       throw new AutorInvalidoError('Falha ao criar autor.');
     }
   }

@@ -1,6 +1,6 @@
 import { ObterAutorUseCase } from '../../../layer/nodejs/src/autor/obter-autor';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
-import { AutorDTO, LivroDTO, LogService } from '@gustavoadolfo/minhoteca-core-layer';
+import { AutorDTO, Livro, LogService } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 
 // Mock parcial do core-layer (acompanhando o padrão de outros testes)
@@ -14,12 +14,13 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
       warn: jest.fn(),
     })),
     LivroAdapter: {
-      toDTOList: jest.fn((livros) =>
-        livros.map((livro: LivroDTO) => ({
-          id: livro.id,
-          titulo: livro.titulo,
-          subtitulo: livro.subtitulo,
-          imagemCapaUrl: livro.imagemCapaUrl,
+      // O toDTOList recebe entidades Livro e retorna DTOs
+      toDTOList: jest.fn((livroEntities: Livro[]) =>
+        livroEntities.map((entity) => ({
+          id: entity.getId(),
+          titulo: entity.titulo,
+          subtitulo: entity.subtitulo,
+          imagemCapaUrl: entity.imagemCapaUrl,
         }))
       ),
     },
@@ -28,6 +29,7 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ObterAutorUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
+  const idExecucao = 'test-execution-id';
 
   const autorMockData = {
     id: '1234567890',
@@ -75,29 +77,17 @@ describe('ObterAutorUseCase', () => {
 
   it('deve obter um autor com sucesso utilizando pathParameters', async () => {
     const mockResult: ResultType = {
-      data: [autorMockData],
-      limit: 1,
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
-    repoMock.queryData.mockResolvedValueOnce(mockResult);
+      data: autorMockData,
+    } as ResultType;
+    repoMock.findByMinhotecaId.mockResolvedValueOnce(mockResult);
+    repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType); // Mock para livros
 
-    const useCase = new ObterAutorUseCase(repoMock);
+    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
     const event = createEvent({ id: '1234567890' });
 
     const result = await useCase.execute(event);
 
-    expect(repoMock.queryData).toHaveBeenCalledWith('Autores', [
-      {
-        attribute: { AttributeName: 'id', AttributeType: 'S' },
-        attributeValue: '1234567890',
-        partitionKey: false,
-        sortKey: false,
-      },
-    ]);
+    expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores', '1234567890');
     expect(result.Code).toBe(200);
     expect(result.Message).toBe('Autor obtido com sucesso.');
     expect(result.PageData).toEqual(
@@ -107,32 +97,24 @@ describe('ObterAutorUseCase', () => {
 
   it('deve obter um autor com sucesso utilizando queryStringParameters (fallback de id)', async () => {
     const mockResult: ResultType = {
-      data: [autorMockData],
-      limit: 1,
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
-    repoMock.queryData.mockResolvedValueOnce(mockResult);
+      data: autorMockData,
+    } as ResultType;
+    repoMock.findByMinhotecaId.mockResolvedValueOnce(mockResult);
+    repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType); // Mock para livros
 
-    const useCase = new ObterAutorUseCase(repoMock);
+    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
     const event = createEvent(null, { id: '9999' });
 
     await useCase.execute(event);
 
-    expect(repoMock.queryData).toHaveBeenCalledWith(
-      'Autores',
-      expect.arrayContaining([expect.objectContaining({ attributeValue: '9999' })])
-    );
+    expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores', '9999');
   });
 
   it('deve retornar 404 e usar logger.warn quando o repositório não retornar uma result válida', async () => {
     // Simulando retorno null que aciona a branch `if (result)` false
-    repoMock.queryData.mockResolvedValueOnce(null as unknown as ResultType);
+    repoMock.findByMinhotecaId.mockResolvedValueOnce(null as unknown as ResultType);
 
-    const useCase = new ObterAutorUseCase(repoMock);
+    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
     const event = createEvent({ id: 'nao-existe' });
 
     const result = await useCase.execute(event);
@@ -143,16 +125,16 @@ describe('ObterAutorUseCase', () => {
   });
 
   it('deve lançar erro genérico no log (e retornar falha) quando nenhum ID for informado', async () => {
-    const useCase = new ObterAutorUseCase(repoMock);
+    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
     const event = createEvent(null, null);
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter autor.');
   });
 
   it('deve lançar erro genérico quando o repositório falhar internamente', async () => {
-    repoMock.queryData.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
+    repoMock.findByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
 
-    const useCase = new ObterAutorUseCase(repoMock);
+    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
     const event = createEvent({ id: '123' });
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter autor.');
@@ -164,27 +146,18 @@ describe('ObterAutorUseCase', () => {
     process.env.TABELA_AUTORES = 'Tabela_Mock_Autor_Obter';
 
     try {
-      repoMock.queryData.mockResolvedValueOnce({ data: [autorMockData] } as ResultType);
-      const useCase = new ObterAutorUseCase(repoMock);
+      repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: autorMockData } as ResultType);
+      repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
+      const useCase = new ObterAutorUseCase(repoMock, idExecucao);
 
       await useCase.execute(createEvent({ id: '999' }));
-      expect(repoMock.queryData).toHaveBeenCalledWith('Tabela_Mock_Autor_Obter', expect.any(Array));
+      expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Autor_Obter', '999');
     } finally {
       process.env.TABELA_AUTORES = originalEnv;
     }
   });
 
   it('deve obter um autor com livros associados quando houver registros na tabela de Livros', async () => {
-    const mockAutor: ResultType = {
-      data: [autorMockData],
-      limit: 1,
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
-
     const mockLivros: ResultType = {
       data: [
         {
@@ -193,6 +166,7 @@ describe('ObterAutorUseCase', () => {
           subtitulo: 'Subtitulo 1',
           imagemCapaUrl: 'http://example.com/capa1.jpg',
           autorId: '1234567890',
+          isbn: '1234567890123',
         },
         {
           id: 'livro-2',
@@ -200,6 +174,7 @@ describe('ObterAutorUseCase', () => {
           subtitulo: 'Subtitulo 2',
           imagemCapaUrl: 'http://example.com/capa2.jpg',
           autorId: '1234567890',
+          isbn: '9876543210987',
         },
       ],
       limit: 1000,
@@ -210,10 +185,10 @@ describe('ObterAutorUseCase', () => {
       hasPrevPage: false,
     };
 
-    repoMock.queryData.mockResolvedValueOnce(mockAutor);
+    repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: autorMockData } as ResultType);
     repoMock.getAll.mockResolvedValueOnce(mockLivros);
 
-    const useCase = new ObterAutorUseCase(repoMock);
+    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
     const event = createEvent({ id: '1234567890' });
 
     const result = await useCase.execute(event);
@@ -224,40 +199,30 @@ describe('ObterAutorUseCase', () => {
       limit: 1000,
     });
     expect(result.Code).toBe(200);
-    expect(result.PageData).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          nome: 'autor-mock-name',
-          livros: expect.arrayContaining([
-            expect.objectContaining({
-              id: 'livro-1',
-              titulo: 'Livro Test 1',
-              subtitulo: 'Subtitulo 1',
-              imagemCapaUrl: 'http://example.com/capa1.jpg',
-            }),
-            expect.objectContaining({
-              id: 'livro-2',
-              titulo: 'Livro Test 2',
-              subtitulo: 'Subtitulo 2',
-              imagemCapaUrl: 'http://example.com/capa2.jpg',
-            }),
-          ]),
-        }),
-      ])
-    );
+    expect(result.PageData).toEqual([
+      expect.objectContaining({
+        nome: 'autor-mock-name',
+        livros: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'livro-1',
+            titulo: 'Livro Test 1',
+            subtitulo: 'Subtitulo 1',
+            imagemCapaUrl: 'http://example.com/capa1.jpg',
+            // O DTO de Livro retornado pelo ObterAutorUseCase não inclui o ISBN
+          }),
+          expect.objectContaining({
+            id: 'livro-2',
+            titulo: 'Livro Test 2',
+            subtitulo: 'Subtitulo 2',
+            imagemCapaUrl: 'http://example.com/capa2.jpg',
+            // O DTO de Livro retornado pelo ObterAutorUseCase não inclui o ISBN
+          }),
+        ]),
+      }),
+    ]);
   });
 
   it('deve obter um autor sem a propriedade livros quando nenhum livro for encontrado', async () => {
-    const mockAutor: ResultType = {
-      data: [autorMockData],
-      limit: 1,
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
-
     const mockLivrosVazio: ResultType = {
       data: [],
       limit: 1000,
@@ -268,10 +233,10 @@ describe('ObterAutorUseCase', () => {
       hasPrevPage: false,
     };
 
-    repoMock.queryData.mockResolvedValueOnce(mockAutor);
+    repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: autorMockData } as ResultType);
     repoMock.getAll.mockResolvedValueOnce(mockLivrosVazio);
 
-    const useCase = new ObterAutorUseCase(repoMock);
+    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
     const event = createEvent({ id: '1234567890' });
 
     const result = await useCase.execute(event);
