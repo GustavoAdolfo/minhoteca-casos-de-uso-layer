@@ -63,7 +63,7 @@
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
     "@gustavoadolfo/minhoteca-adapter-layer": "^0.1.6",
-    "@gustavoadolfo/minhoteca-core-layer": "^1.0.15",
+    "@gustavoadolfo/minhoteca-core-layer": "^1.0.27",
     "@types/aws-lambda": "^8.10.162",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.1",
