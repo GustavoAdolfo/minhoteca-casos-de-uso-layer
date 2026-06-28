@@ -12,15 +12,25 @@ export class ExcluirLivroUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('ExcluirLivroUseCase');
 
-  constructor(private _repository: RepositoryInterface) {
-    this._tabelaLivros = process.env.TABELA_LIVROS || 'Livros';
+  constructor(
+    private _repository: RepositoryInterface,
+    private idExecucao?: string
+  ) {
+    this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
-    this.logService.info('🏁 Iniciando caso de uso de excluir livro.');
+    this.logService.info(
+      '🏁 Iniciando caso de uso de excluir livro.',
+      { label: 'ExcluirLivroUseCase', logId: this.idExecucao },
+      { data }
+    );
     const livroId = data.queryStringParameters?.id;
     if (!livroId) {
-      this.logService.warn('ID do livro não fornecido.');
+      this.logService.warn('ID do livro não fornecido.', {
+        label: 'ExcluirLivroUseCase',
+        logId: this.idExecucao,
+      });
       throw new LivroInvalidoError('ID do livro é obrigatório para exclusão.');
     }
 
@@ -31,7 +41,12 @@ export class ExcluirLivroUseCase implements UseCaseInterface {
       );
       return createResult(result.data, 200, 'Livro excluído com sucesso.');
     } catch (error) {
-      this.logService.error('Erro ao excluir livro:', {}, error as Error);
+      this.logService.error(
+        'Erro ao excluir livro:',
+        { label: 'ExcluirLivroUseCase', logId: this.idExecucao, livroId },
+        error as Error,
+        { data }
+      );
       throw new LivroInvalidoError('Falha ao excluir livro.');
     }
   }

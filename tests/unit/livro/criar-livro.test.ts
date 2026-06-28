@@ -19,6 +19,7 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 describe('CriarLivroUseCase', () => {
   let mongoRepoMock: jest.Mocked<RepositoryInterface>;
   let dynamoRepoMock: jest.Mocked<RepositoryInterface>;
+  const idExecucao = 'test-execution-id';
 
   // Utilizamos o modelo de dados real extraído do arquivo de mock
   const livroMockData = {
@@ -108,7 +109,7 @@ describe('CriarLivroUseCase', () => {
       };
       mongoRepoMock.saveData.mockResolvedValueOnce(mockResult);
 
-      const useCase = new CriarLivroUseCase(mongoRepoMock);
+      const useCase = new CriarLivroUseCase(mongoRepoMock, idExecucao);
       const event = createEvent(livroCreateBody);
       const result = await useCase.execute(event);
 
@@ -138,7 +139,7 @@ describe('CriarLivroUseCase', () => {
       mongoError.name = 'MongoServerError';
       mongoRepoMock.saveData.mockRejectedValueOnce(mongoError);
 
-      const useCase = new CriarLivroUseCase(mongoRepoMock);
+      const useCase = new CriarLivroUseCase(mongoRepoMock, idExecucao);
       await expect(useCase.execute(createEvent(livroCreateBody))).rejects.toThrow(
         'Falha ao criar livro.'
       );
@@ -159,7 +160,7 @@ describe('CriarLivroUseCase', () => {
       };
       dynamoRepoMock.saveData.mockResolvedValueOnce(mockResult);
 
-      const useCase = new CriarLivroUseCase(dynamoRepoMock);
+      const useCase = new CriarLivroUseCase(dynamoRepoMock, idExecucao);
       const event = createEvent(livroCreateBody);
       const result = await useCase.execute(event);
 
@@ -192,7 +193,7 @@ describe('CriarLivroUseCase', () => {
       dynamoError.name = 'ProvisionedThroughputExceededException';
       dynamoRepoMock.saveData.mockRejectedValueOnce(dynamoError);
 
-      const useCase = new CriarLivroUseCase(dynamoRepoMock);
+      const useCase = new CriarLivroUseCase(dynamoRepoMock, idExecucao);
       await expect(useCase.execute(createEvent(livroCreateBody))).rejects.toThrow(
         'Falha ao criar livro.'
       );
@@ -202,7 +203,7 @@ describe('CriarLivroUseCase', () => {
   describe('Cenários de borda', () => {
     it('deve falhar ao tratar data.body nulo devido a erro de validação (fallback para objeto vazio)', async () => {
       const spyAdapter = jest.spyOn(LivroAdapter, 'fromCreateDTO');
-      const useCase = new CriarLivroUseCase(dynamoRepoMock);
+      const useCase = new CriarLivroUseCase(dynamoRepoMock, idExecucao);
       const event = createEvent(null);
 
       await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar livro.');
@@ -210,7 +211,7 @@ describe('CriarLivroUseCase', () => {
     });
 
     it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
-      const useCase = new CriarLivroUseCase(mongoRepoMock);
+      const useCase = new CriarLivroUseCase(mongoRepoMock, idExecucao);
       const event = { body: '{ invalid json' } as APIGatewayEvent;
       await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar livro.');
     });

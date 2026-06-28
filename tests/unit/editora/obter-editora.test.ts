@@ -1,6 +1,6 @@
 import { ObterEditoraUseCase } from '../../../layer/nodejs/src/editora/obter-editora';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
-import { LogService } from '@gustavoadolfo/minhoteca-core-layer';
+import { Livro, LogService } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 
 // Mock parcial do core-layer (acompanhando o padrão de outros testes)
@@ -13,11 +13,23 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
       error: jest.fn(),
       warn: jest.fn(),
     })),
+    LivroAdapter: {
+      // O toDTOList recebe entidades Livro e retorna DTOs
+      toDTOList: jest.fn((livroEntities: Livro[]) =>
+        livroEntities.map((entity) => ({
+          id: entity.getId(),
+          titulo: entity.titulo,
+          subtitulo: entity.subtitulo,
+          imagemCapaUrl: entity.imagemCapaUrl,
+        }))
+      ),
+    },
   };
 });
 
 describe('ObterEditoraUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
+  const idExecucao = 'test-execution-id';
 
   const editoraMockData = {
     id: '1234567890',
@@ -64,30 +76,15 @@ describe('ObterEditoraUseCase', () => {
   };
 
   it('deve obter uma editora com sucesso utilizando pathParameters', async () => {
-    const mockResult: ResultType = {
-      data: [editoraMockData],
-      limit: 1,
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
-    repoMock.queryData.mockResolvedValueOnce(mockResult);
+    repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: editoraMockData } as ResultType);
+    repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType); // Mock para livros
 
-    const useCase = new ObterEditoraUseCase(repoMock);
+    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
     const event = createEvent({ id: '1234567890' });
 
     const result = await useCase.execute(event);
 
-    expect(repoMock.queryData).toHaveBeenCalledWith('Editoras', [
-      {
-        attribute: { AttributeName: 'id', AttributeType: 'S' },
-        attributeValue: '1234567890',
-        partitionKey: false,
-        sortKey: false,
-      },
-    ]);
+    expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Editoras', '1234567890');
     expect(result.Code).toBe(200);
     expect(result.Message).toBe('Editora obtida com sucesso.');
     expect(result.PageData).toEqual(
@@ -96,53 +93,43 @@ describe('ObterEditoraUseCase', () => {
   });
 
   it('deve obter uma editora com sucesso utilizando queryStringParameters (fallback de id)', async () => {
-    const mockResult: ResultType = {
-      data: [editoraMockData],
-      limit: 1,
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
-    repoMock.queryData.mockResolvedValueOnce(mockResult);
+    repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: editoraMockData } as ResultType);
+    repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType); // Mock para livros
 
-    const useCase = new ObterEditoraUseCase(repoMock);
+    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
     const event = createEvent(null, { id: '9999' });
 
     await useCase.execute(event);
 
-    expect(repoMock.queryData).toHaveBeenCalledWith(
-      'Editoras',
-      expect.arrayContaining([expect.objectContaining({ attributeValue: '9999' })])
-    );
+    expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Editoras', '9999');
   });
 
   it('deve retornar 404 e usar logger.warn quando o repositório não retornar uma result válida', async () => {
     // Simulando retorno null que aciona a branch `if (result)` false
-    repoMock.queryData.mockResolvedValueOnce(null as unknown as ResultType);
+    repoMock.findByMinhotecaId.mockResolvedValueOnce(null as unknown as ResultType);
 
-    const useCase = new ObterEditoraUseCase(repoMock);
+    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
     const event = createEvent({ id: 'nao-existe' });
 
     const result = await useCase.execute(event);
 
+    expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Editoras', 'nao-existe');
     expect(result.Code).toBe(404);
     expect(result.Message).toBe('Editora não encontrada.');
     expect(result.PageData).toEqual([]);
   });
 
   it('deve lançar erro genérico no log (e retornar falha) quando nenhum ID for informado', async () => {
-    const useCase = new ObterEditoraUseCase(repoMock);
+    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
     const event = createEvent(null, null);
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter editora.');
   });
 
   it('deve lançar erro genérico quando o repositório falhar internamente', async () => {
-    repoMock.queryData.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
+    repoMock.findByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
 
-    const useCase = new ObterEditoraUseCase(repoMock);
+    const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
     const event = createEvent({ id: '123' });
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter editora.');
@@ -154,14 +141,12 @@ describe('ObterEditoraUseCase', () => {
     process.env.TABELA_EDITORAS = 'Tabela_Mock_Editora_Obter';
 
     try {
-      repoMock.queryData.mockResolvedValueOnce({ data: [editoraMockData] } as ResultType);
-      const useCase = new ObterEditoraUseCase(repoMock);
+      repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: editoraMockData } as ResultType);
+      repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
+      const useCase = new ObterEditoraUseCase(repoMock, idExecucao);
 
       await useCase.execute(createEvent({ id: '999' }));
-      expect(repoMock.queryData).toHaveBeenCalledWith(
-        'Tabela_Mock_Editora_Obter',
-        expect.any(Array)
-      );
+      expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Editora_Obter', '999');
     } finally {
       process.env.TABELA_EDITORAS = originalEnv;
     }

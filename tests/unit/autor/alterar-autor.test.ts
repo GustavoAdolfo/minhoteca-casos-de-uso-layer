@@ -17,6 +17,7 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('AlterarAutorUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
+  const idExecucao = 'test-execution-id';
 
   const autorMockData = {
     id: '1234567890',
@@ -57,7 +58,7 @@ describe('AlterarAutorUseCase', () => {
     };
     repoMock.updateByMinhotecaId.mockResolvedValueOnce(mockResult);
 
-    const useCase = new AlterarAutorUseCase(repoMock);
+    const useCase = new AlterarAutorUseCase(repoMock, idExecucao);
     const event = createEvent(autorMockData);
     const result = await useCase.execute(event);
 
@@ -73,7 +74,7 @@ describe('AlterarAutorUseCase', () => {
 
   it('deve lançar erro quando o ID da autor não for informado (ou for vazio)', async () => {
     const dataWithoutId = { ...autorMockData, id: '   ' };
-    const useCase = new AlterarAutorUseCase(repoMock);
+    const useCase = new AlterarAutorUseCase(repoMock, idExecucao);
     const event = createEvent(dataWithoutId);
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar Autor.');
@@ -81,7 +82,7 @@ describe('AlterarAutorUseCase', () => {
   });
 
   it('deve lançar erro quando o body do evento for vazio', async () => {
-    const useCase = new AlterarAutorUseCase(repoMock);
+    const useCase = new AlterarAutorUseCase(repoMock, idExecucao);
     const event = createEvent(null);
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar Autor.');
@@ -91,14 +92,14 @@ describe('AlterarAutorUseCase', () => {
   it('deve lançar erro genérico quando houver uma falha interna (ex: erro no repositório)', async () => {
     repoMock.updateByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco'));
 
-    const useCase = new AlterarAutorUseCase(repoMock);
+    const useCase = new AlterarAutorUseCase(repoMock, idExecucao);
     const event = createEvent(autorMockData);
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar Autor.');
   });
 
   it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
-    const useCase = new AlterarAutorUseCase(repoMock);
+    const useCase = new AlterarAutorUseCase(repoMock, idExecucao);
     const event = { body: '{ json-invalido ' } as APIGatewayEvent;
 
     await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar Autor.');

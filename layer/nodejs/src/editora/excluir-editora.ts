@@ -13,16 +13,26 @@ export class ExcluirEditoraUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('ExcluirEditoraUseCase');
 
-  constructor(private _repository: RepositoryInterface) {
-    this.logService.info('🏁 Iniciando caso de uso de excluir editora.');
-    this._tabelaEditoras = process.env.TABELA_EDITORAS || 'Editoras';
-    this._tabelaLivros = process.env.TABELA_LIVROS || 'Livros';
+  constructor(
+    private _repository: RepositoryInterface,
+    private idExecucao?: string
+  ) {
+    this._tabelaEditoras = process.env.TABELA_EDITORAS ?? 'Editoras';
+    this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
+    this.logService.info(
+      '🏁 Iniciando caso de uso de excluir editora.',
+      { label: 'ExcluirEditoraUseCase', logId: this.idExecucao },
+      { data }
+    );
     const editoraId = data.queryStringParameters?.id;
     if (!editoraId) {
-      this.logService.warn('ID da editora não fornecido.');
+      this.logService.warn('ID da editora não fornecido.', {
+        label: 'ExcluirEditoraUseCase',
+        logId: this.idExecucao,
+      });
       throw new EditoraInvalidaError('ID da editora é obrigatório para exclusão.');
     }
     const livrosDaEditora = await this._repository.getAll(this._tabelaLivros, {
@@ -31,7 +41,12 @@ export class ExcluirEditoraUseCase implements UseCaseInterface {
     });
     if (livrosDaEditora?.data && livrosDaEditora?.data.length > 0) {
       this.logService.warn(
-        `Não é possível excluir a editora ${editoraId} porque existem livros associados a ela.`
+        `Não é possível excluir a editora ${editoraId} porque existem livros associados a ela.`,
+        {
+          label: 'ExcluirEditoraUseCase',
+          logId: this.idExecucao,
+          editoraId,
+        }
       );
       throw new EditoraInvalidaError(
         'Não é possível excluir a editora porque existem livros associados a ela.'
@@ -45,7 +60,12 @@ export class ExcluirEditoraUseCase implements UseCaseInterface {
       );
       return createResult(result.data, 200, 'Editora excluída com sucesso.');
     } catch (error) {
-      this.logService.error('Erro ao excluir editora:', {}, error as Error);
+      this.logService.error(
+        'Erro ao excluir editora:',
+        { label: 'ExcluirEditoraUseCase', logId: this.idExecucao, editoraId },
+        error as Error,
+        { data }
+      );
       throw new EditoraInvalidaError('Falha ao excluir editora.');
     }
   }

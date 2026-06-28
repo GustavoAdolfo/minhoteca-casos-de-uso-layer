@@ -16,13 +16,20 @@ export class ListarLivroUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('ListarLivroUseCase');
 
-  constructor(private _repository: RepositoryInterface) {
-    this._tabelaLivros = process.env.TABELA_LIVROS || 'Livros';
+  constructor(
+    private _repository: RepositoryInterface,
+    private idExecucao?: string
+  ) {
+    this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
   async execute(data: APIGatewayEvent): Promise<PageDataType> {
     try {
-      this.logService.info('✅ Início da execução do caso de uso ListarLivroUseCase', {}, { data });
+      this.logService.info(
+        '✅ Início da execução do caso de uso ListarLivroUseCase',
+        { label: 'ListarLivroUseCase', logId: this.idExecucao },
+        { data }
+      );
 
       const page = data.queryStringParameters?.page
         ? parseInt(data.queryStringParameters.page, 10)
@@ -32,12 +39,16 @@ export class ListarLivroUseCase implements UseCaseInterface {
         : 10;
       const sortBy = data.queryStringParameters?.sortBy || 'titulo';
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
-      this.logService.info('🔍 Informações para buscar livros definidas.', {
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      });
+      this.logService.info(
+        '🔍 Informações para buscar livros definidas.',
+        { label: 'ListarLivroUseCase', logId: this.idExecucao },
+        {
+          page,
+          limit,
+          sortBy,
+          sortOrder,
+        }
+      );
 
       const result: ResultType = await this._repository.getAll(this._tabelaLivros, {
         page,
@@ -48,6 +59,8 @@ export class ListarLivroUseCase implements UseCaseInterface {
       this.logService.info(
         '✅ Dados de livros recuperados',
         {
+          label: 'ListarLivroUseCase',
+          logId: this.idExecucao,
           total: result.totalDocuments,
         },
         { result }
@@ -56,7 +69,11 @@ export class ListarLivroUseCase implements UseCaseInterface {
       const entities = result.data.map((item: LivroInterface) =>
         Livro.create(item, Object.getOwnPropertyDescriptor(item, 'id')?.value ?? '')
       );
-      this.logService.info('✅ Entidades de livros criadas.', {}, { entities });
+      this.logService.info(
+        '✅ Entidades de livros criadas.',
+        { label: 'ListarLivroUseCase', logId: this.idExecucao },
+        { entities }
+      );
 
       const livros: LivroDTO[] = LivroAdapter.toDTOList(entities);
       return createResult(
@@ -76,7 +93,12 @@ export class ListarLivroUseCase implements UseCaseInterface {
         }
       );
     } catch (error) {
-      this.logService.error('Erro ao listar livros:', error as Error);
+      this.logService.error(
+        'Erro ao listar livros:',
+        { label: 'ListarLivroUseCase', logId: this.idExecucao },
+        error as Error,
+        { data }
+      );
       throw new LivroInvalidoError('Falha ao listar livros.');
     }
   }
