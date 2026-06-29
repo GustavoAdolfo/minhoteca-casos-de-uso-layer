@@ -17,7 +17,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('AlterarLivroUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  const idExecucao = 'test-execution-id';
 
   const livroMockData = {
     id: '1cc97df5bfa64cf9b5ff44734a7e4521',
@@ -71,9 +70,9 @@ describe('AlterarLivroUseCase', () => {
     };
     repoMock.updateByMinhotecaId.mockResolvedValueOnce(mockResult);
 
-    const useCase = new AlterarLivroUseCase(repoMock, idExecucao);
+    const useCase = new AlterarLivroUseCase(repoMock);
     const event = createEvent(livroMockData);
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.updateByMinhotecaId).toHaveBeenCalledWith(
       'Livros',
@@ -87,34 +86,34 @@ describe('AlterarLivroUseCase', () => {
 
   it('deve lançar erro quando o ID da autor não for informado (ou for vazio)', async () => {
     const dataWithoutId = { ...livroMockData, id: '   ' };
-    const useCase = new AlterarLivroUseCase(repoMock, idExecucao);
+    const useCase = new AlterarLivroUseCase(repoMock);
     const event = createEvent(dataWithoutId);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar livro.');
     expect(repoMock.updateByMinhotecaId).not.toHaveBeenCalled();
   });
 
   it('deve lançar erro quando o body do evento for vazio', async () => {
-    const useCase = new AlterarLivroUseCase(repoMock, idExecucao);
+    const useCase = new AlterarLivroUseCase(repoMock);
     const event = createEvent(null);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar livro.');
     expect(repoMock.updateByMinhotecaId).not.toHaveBeenCalled();
   });
 
   it('deve lançar erro genérico quando houver uma falha interna (ex: erro no repositório)', async () => {
     repoMock.updateByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco'));
 
-    const useCase = new AlterarLivroUseCase(repoMock, idExecucao);
+    const useCase = new AlterarLivroUseCase(repoMock);
     const event = createEvent(livroMockData);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar livro.');
   });
 
   it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
-    const useCase = new AlterarLivroUseCase(repoMock, idExecucao);
+    const useCase = new AlterarLivroUseCase(repoMock);
     const event = { body: '{ json-invalido ' } as APIGatewayEvent;
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar livro.');
   });
 });

@@ -18,18 +18,15 @@ export class ListarAutorUseCase implements UseCaseInterface {
   /**
    *
    */
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     try {
       this.logService.info(
         '✅ Início da execução do caso de uso ListarAutorUseCase',
-        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        { label: 'ListarAutorUseCase', ...(idExecucao && { logId: idExecucao }) },
         { data }
       );
 
@@ -43,7 +40,7 @@ export class ListarAutorUseCase implements UseCaseInterface {
       const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
       this.logService.info(
         '🔍 Informações para buscar autores definidas.',
-        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        { label: 'ListarAutorUseCase', ...(idExecucao && { logId: idExecucao }) },
         {
           page,
           limit,
@@ -62,7 +59,7 @@ export class ListarAutorUseCase implements UseCaseInterface {
         '✅ Dados de autores recuperados',
         {
           label: 'ListarAutorUseCase',
-          logId: this.idExecucao,
+          ...(idExecucao && { logId: idExecucao }),
           total: result.totalDocuments,
         },
         { result }
@@ -73,7 +70,7 @@ export class ListarAutorUseCase implements UseCaseInterface {
       );
       this.logService.info(
         '✅ Entidades de autores criadas.',
-        { label: 'ListarAutorUseCase', logId: this.idExecucao },
+        { label: 'ListarAutorUseCase', ...(idExecucao && { logId: idExecucao }) },
         { entities }
       );
 
@@ -97,9 +94,8 @@ export class ListarAutorUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao listar autores:',
-        { label: 'ListarAutorUseCase', logId: this.idExecucao },
-        error as Error,
-        { data }
+        { label: 'ListarAutorUseCase', ...(idExecucao && { logId: idExecucao }), data },
+        error as Error
       );
       throw new AutorInvalidoError('Falha ao listar autores.');
     }

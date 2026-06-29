@@ -67,7 +67,7 @@ describe('ObterPaisUseCase', () => {
     const useCase = new ObterPaisUseCase(repoMock);
     const event = createEvent({ id: '76' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.queryData).toHaveBeenCalledWith('Paises', [
       {
@@ -92,7 +92,7 @@ describe('ObterPaisUseCase', () => {
     const useCase = new ObterPaisUseCase(repoMock);
     const event = createEvent(null, { id: '76' });
 
-    await useCase.execute(event);
+    await useCase.execute(event, '12345');
 
     expect(repoMock.queryData).toHaveBeenCalledWith('Paises', [
       {
@@ -114,7 +114,7 @@ describe('ObterPaisUseCase', () => {
     const useCase = new ObterPaisUseCase(repoMock);
     const event = createEvent({ id: 'nao-existe' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(result.Code).toBe(404);
     expect(result.Message).toBe('País não encontrado.');
@@ -127,7 +127,7 @@ describe('ObterPaisUseCase', () => {
     const useCase = new ObterPaisUseCase(repoMock);
     const event = createEvent(null, null);
 
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       new PaisInvalidoError('Falha ao obter país.')
     );
   });
@@ -138,7 +138,7 @@ describe('ObterPaisUseCase', () => {
     const useCase = new ObterPaisUseCase(repoMock);
     const event = createEvent({ id: '123' });
 
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       new PaisInvalidoError('Falha ao obter país.')
     );
   });
@@ -151,7 +151,7 @@ describe('ObterPaisUseCase', () => {
       repoMock.queryData.mockResolvedValueOnce({ data: [paisMockData] } as ResultType);
       const useCase = new ObterPaisUseCase(repoMock);
 
-      await useCase.execute(createEvent({ id: '999' }));
+      await useCase.execute(createEvent({ id: '999' }), '12345');
       expect(repoMock.queryData).toHaveBeenCalledWith('Tabela_Mock_Obter_Pais', expect.any(Array));
     } finally {
       process.env.TABELA_PAISES = originalEnv;

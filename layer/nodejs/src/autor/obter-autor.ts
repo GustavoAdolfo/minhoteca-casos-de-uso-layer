@@ -20,20 +20,17 @@ export class ObterAutorUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('ObterAutorUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     this.logService.info(
       'Início a execução do caso de uso ObterAutorUseCase',
       {
         label: 'ObterAutorUseCase',
-        logId: this.idExecucao,
+        ...(idExecucao && { logId: idExecucao }),
       },
       { data }
     );
@@ -49,14 +46,18 @@ export class ObterAutorUseCase implements UseCaseInterface {
           {
             autorId,
             label: 'ObterAutorUseCase',
-            logId: this.idExecucao,
+            ...(idExecucao && { logId: idExecucao }),
           },
           { result }
         );
         if (result?.data) {
           this.logService.info(
             'Criando entidade Autor a partir dos dados recuperados',
-            { label: 'ObterAutorUseCase', autorId, logId: this.idExecucao },
+            {
+              label: 'ObterAutorUseCase',
+              autorId,
+              ...(idExecucao && { logId: idExecucao }),
+            },
             { result }
           );
           const autorEntity = Autor.create(
@@ -65,7 +66,11 @@ export class ObterAutorUseCase implements UseCaseInterface {
           );
           this.logService.info(
             'Convertendo Autor para DTO',
-            { label: 'ObterAutorUseCase', autorId, logId: this.idExecucao },
+            {
+              label: 'ObterAutorUseCase',
+              autorId,
+              ...(idExecucao && { logId: idExecucao }),
+            },
             { result }
           );
           const autor = AutorAdapter.toDTO(autorEntity);
@@ -73,7 +78,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
           this.logService.info('Buscando dados de livros associados ao autor', {
             label: 'ObterAutorUseCase',
             autorId,
-            logId: this.idExecucao,
+            ...(idExecucao && { logId: idExecucao }),
           });
 
           const livros = await this._repository.getAll(this._tabelaLivros, {
@@ -100,7 +105,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
                 label: 'ObterAutorUseCase',
                 autorId,
                 livrosId: autor.livros.map((livro) => livro.id).join(', '),
-                logId: this.idExecucao,
+                ...(idExecucao && { logId: idExecucao }),
               },
               { autor }
             );
@@ -112,7 +117,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
         this.logService.warn('Autor não encontrado.', {
           autorId,
           label: 'ObterAutorUseCase',
-          logId: this.idExecucao,
+          ...(idExecucao && { logId: idExecucao }),
         });
         return createResult([], 404, 'Autor não encontrado.');
       }
@@ -121,7 +126,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao obter autor:',
-        { label: 'ObterAutorUseCase', logId: this.idExecucao, data },
+        { label: 'ObterAutorUseCase', ...(idExecucao && { logId: idExecucao }), data },
         error as Error
       );
       throw new AutorInvalidoError('Falha ao obter autor.');

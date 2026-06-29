@@ -18,7 +18,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ExcluirEditoraUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  const idExecucao = 'test-execution-id';
 
   const mockResult: ResultType = {
     data: [],
@@ -68,10 +67,10 @@ describe('ExcluirEditoraUseCase', () => {
   it('deve excluir uma editora com sucesso quando o id for informado', async () => {
     repoMock.getAll.mockResolvedValueOnce({ data: [] } as unknown as ResultType);
     repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
-    const useCase = new ExcluirEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirEditoraUseCase(repoMock);
 
     const event = createEvent({ id: '12345' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.getAll).toHaveBeenCalled();
     expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Editoras', '12345');
@@ -84,10 +83,10 @@ describe('ExcluirEditoraUseCase', () => {
       data: [{ id: 'livro-1', titulo: 'Livro Teste' }],
     } as unknown as ResultType);
 
-    const useCase = new ExcluirEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirEditoraUseCase(repoMock);
     const event = createEvent({ id: '12345' });
 
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       'Não é possível excluir a editora porque existem livros associados a ela.'
     );
 
@@ -96,19 +95,19 @@ describe('ExcluirEditoraUseCase', () => {
   });
 
   it('deve retornar erro quando queryStringParameters for null (branch coverage)', async () => {
-    const useCase = new ExcluirEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirEditoraUseCase(repoMock);
 
     const event = createEvent(null);
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       'ID da editora é obrigatório para exclusão.'
     );
   });
 
   it('deve retornar erro quando o id não estiver presente no queryStringParameters (branch coverage)', async () => {
-    const useCase = new ExcluirEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirEditoraUseCase(repoMock);
 
     const event = createEvent({ outroParametro: 'abc' });
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       'ID da editora é obrigatório para exclusão.'
     );
   });
@@ -120,9 +119,9 @@ describe('ExcluirEditoraUseCase', () => {
     try {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as unknown as ResultType);
       repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
-      const useCase = new ExcluirEditoraUseCase(repoMock, idExecucao);
+      const useCase = new ExcluirEditoraUseCase(repoMock);
 
-      await useCase.execute(createEvent({ id: '999' }));
+      await useCase.execute(createEvent({ id: '999' }), '12345');
       expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Editora', '999');
     } finally {
       process.env.TABELA_EDITORAS = originalEnv;
@@ -132,11 +131,20 @@ describe('ExcluirEditoraUseCase', () => {
   it('deve tratar e lançar o erro correto quando o repositório falhar (branch coverage)', async () => {
     repoMock.getAll.mockResolvedValueOnce({ data: [] } as unknown as ResultType);
     repoMock.deleteByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
-    const useCase = new ExcluirEditoraUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirEditoraUseCase(repoMock);
 
-    await expect(useCase.execute(createEvent({ id: '12345' }))).rejects.toThrow(
+    await expect(useCase.execute(createEvent({ id: '12345' }), '12345')).rejects.toThrow(
       'Falha ao excluir editora.'
     );
     expect(getLogServiceErrorMock()).toHaveBeenCalled();
+  });
+
+  it('deve lançar erro se a verificação de livros associados falhar', async () => {
+    repoMock.getAll.mockRejectedValueOnce(new Error('Falha ao excluir editora.'));
+
+    const useCase = new ExcluirEditoraUseCase(repoMock);
+    const event = createEvent({ id: '12345' });
+
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao excluir editora.');
   });
 });

@@ -20,23 +20,41 @@ export class CriarPaisUseCase implements UseCaseInterface {
     this._tableName = process.env.TABELA_PAISES || 'Paises';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
-    this.logService.info('🏁 Iniciando caso de uso de criar país.');
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
+    this.logService.info('🏁 Iniciando caso de uso de criar país.', {
+      ...(idExecucao && { logId: idExecucao }),
+    });
     try {
       const body = JSON.parse(data.body ?? '{}');
-      this.logService.info('Dados recebidos para gravação', { body });
+      this.logService.info('Dados recebidos para gravação', {
+        body,
+        ...(idExecucao && { logId: idExecucao }),
+      });
 
       const entity = PaisAdapter.fromCreateDTO(body);
-      this.logService.info('Dados convertidos para entidade', { entity });
+      this.logService.info('Dados convertidos para entidade', {
+        entity,
+        ...(idExecucao && { logId: idExecucao }),
+      });
 
       await this._repository.saveData(this._tableName, JSON.parse(entity.toJSONString()));
-      this.logService.info('País gravado com sucesso', { entity });
+      this.logService.info('País gravado com sucesso', {
+        entity,
+        ...(idExecucao && { logId: idExecucao }),
+      });
       const paisDTO: PaisDTO = PaisAdapter.toDTO(entity);
 
-      this.logService.info('Dados convertidos para DTO de retorno', { paisDTO });
+      this.logService.info('Dados convertidos para DTO de retorno', {
+        paisDTO,
+        ...(idExecucao && { logId: idExecucao }),
+      });
       return createResult([paisDTO], 201, 'País criado com sucesso');
     } catch (error) {
-      this.logService.error('Erro ao criar país:', {}, error as Error);
+      this.logService.error(
+        'Erro ao criar país:',
+        { ...(idExecucao && { logId: idExecucao }) },
+        error as Error
+      );
       throw new PaisInvalidoError('Falha ao criar país.');
     }
   }

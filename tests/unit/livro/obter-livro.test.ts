@@ -18,7 +18,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ObterLivroUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  const idExecucao = 'test-execution-id';
 
   const livroMockData = {
     id: 'livro-123',
@@ -70,10 +69,10 @@ describe('ObterLivroUseCase', () => {
       .mockResolvedValueOnce({ data: livroMockData } as ResultType)
       .mockResolvedValueOnce({ data: autorMockData } as ResultType);
 
-    const useCase = new ObterLivroUseCase(repoMock, idExecucao);
+    const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'livro-123' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-123');
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores', 'autor-456');
@@ -91,10 +90,10 @@ describe('ObterLivroUseCase', () => {
       .mockResolvedValueOnce({ data: livroMockData } as ResultType)
       .mockResolvedValueOnce({ data: null } as ResultType); // Autor não encontrado
 
-    const useCase = new ObterLivroUseCase(repoMock, idExecucao);
+    const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'livro-123' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-123');
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores', 'autor-456');
@@ -107,10 +106,10 @@ describe('ObterLivroUseCase', () => {
   it('deve retornar 404 quando o livro não for encontrado', async () => {
     repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: null } as ResultType);
 
-    const useCase = new ObterLivroUseCase(repoMock, idExecucao);
+    const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'nao-existe' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(result.Code).toBe(404);
     expect(result.Message).toBe('Livro não encontrado.');
@@ -121,10 +120,10 @@ describe('ObterLivroUseCase', () => {
   });
 
   it('deve lançar erro quando o ID do livro não for informado', async () => {
-    const useCase = new ObterLivroUseCase(repoMock, idExecucao);
+    const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent(null, null);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao obter livro.');
     expect(getLogServiceMock('error')).toHaveBeenCalledWith(
       'Falha ao obter livro:',
       expect.any(Object),
@@ -137,10 +136,10 @@ describe('ObterLivroUseCase', () => {
     repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: livroMockData } as ResultType);
     repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: autorMockData } as ResultType);
 
-    const useCase = new ObterLivroUseCase(repoMock, idExecucao);
+    const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent(null, { id: 'livro-qs-123' });
 
-    await useCase.execute(event);
+    await useCase.execute(event, '12345');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-qs-123');
   });
@@ -153,10 +152,10 @@ describe('ObterLivroUseCase', () => {
       .mockResolvedValueOnce({ data: livroMockData } as ResultType)
       .mockResolvedValueOnce({ data: autorMockData } as ResultType);
 
-    const useCase = new ObterLivroUseCase(repoMock, idExecucao);
+    const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'livro-123' });
 
-    await useCase.execute(event);
+    await useCase.execute(event, '12345');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros_Test', 'livro-123');
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores_Test', 'autor-456');
@@ -169,10 +168,10 @@ describe('ObterLivroUseCase', () => {
   it('deve capturar e relançar erro quando o repositório falhar', async () => {
     repoMock.findByMinhotecaId.mockRejectedValueOnce(new Error('Falha no DB'));
 
-    const useCase = new ObterLivroUseCase(repoMock, idExecucao);
+    const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'livro-123' });
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao obter livro.');
     expect(getLogServiceMock('error')).toHaveBeenCalledWith(
       'Falha ao obter livro:',
       expect.any(Object),

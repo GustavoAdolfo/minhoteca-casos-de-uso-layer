@@ -57,7 +57,7 @@ describe('ExcluirPaisUseCase', () => {
     const useCase = new ExcluirPaisUseCase(repoMock);
 
     const event = createEvent({ id: '76' }); // ID do Brasil
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '123456789');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Autores', {
       filterKey: 'paisId',
@@ -76,7 +76,7 @@ describe('ExcluirPaisUseCase', () => {
     const useCase = new ExcluirPaisUseCase(repoMock);
     const event = createEvent({ id: '76' });
 
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow(
       new PaisInvalidoError(
         'Não é possível excluir o país porque existem autores associados a ele.'
       )
@@ -90,7 +90,7 @@ describe('ExcluirPaisUseCase', () => {
     const useCase = new ExcluirPaisUseCase(repoMock);
 
     const event = createEvent(null);
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow(
       new PaisInvalidoError('ID do país é obrigatório para exclusão.')
     );
   });
@@ -106,7 +106,7 @@ describe('ExcluirPaisUseCase', () => {
       repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
       const useCase = new ExcluirPaisUseCase(repoMock);
 
-      await useCase.execute(createEvent({ id: '999' }));
+      await useCase.execute(createEvent({ id: '999' }), '123456789');
       expect(repoMock.getAll).toHaveBeenCalledWith('Tabela_Mock_Autor', expect.any(Object));
       expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Pais', '999');
     } finally {
@@ -120,7 +120,7 @@ describe('ExcluirPaisUseCase', () => {
     repoMock.deleteByMinhotecaId.mockRejectedValueOnce(new Error('Erro de banco de dados'));
     const useCase = new ExcluirPaisUseCase(repoMock);
 
-    await expect(useCase.execute(createEvent({ id: '76' }))).rejects.toThrow(
+    await expect(useCase.execute(createEvent({ id: '76' }), '123456789')).rejects.toThrow(
       new PaisInvalidoError('Falha ao excluir país.')
     );
     const logServiceInstance = (LogService as jest.Mock).mock.results[0].value;

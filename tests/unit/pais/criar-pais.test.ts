@@ -62,7 +62,7 @@ describe('CriarPaisUseCase', () => {
 
     const useCase = new CriarPaisUseCase(repoMock);
     const event = createEvent(paisMockData);
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '123456789');
 
     expect(repoMock.saveData).toHaveBeenCalledWith(
       'Paises',
@@ -79,7 +79,7 @@ describe('CriarPaisUseCase', () => {
     const useCase = new CriarPaisUseCase(repoMock);
     const event = createEvent(paisMockData);
 
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow(
       new PaisInvalidoError('Falha ao criar país.')
     );
   });
@@ -88,7 +88,7 @@ describe('CriarPaisUseCase', () => {
     const useCase = new CriarPaisUseCase(repoMock);
     const event = { body: '{json:"invalido"' } as APIGatewayEvent;
 
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow(
       new PaisInvalidoError('Falha ao criar país.')
     );
     expect(repoMock.saveData).not.toHaveBeenCalled();
@@ -100,7 +100,7 @@ describe('CriarPaisUseCase', () => {
     const event = createEvent(null);
 
     // A chamada com body nulo fará o adapter ser chamado com '{}', que falhará na validação da entidade.
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow(
       new PaisInvalidoError('Falha ao criar país.')
     );
 
@@ -126,7 +126,7 @@ describe('CriarPaisUseCase', () => {
 
       const useCase = new CriarPaisUseCase(repoMock);
       const event = createEvent(paisMockData);
-      await useCase.execute(event);
+      await useCase.execute(event, '123456789');
 
       expect(repoMock.saveData).toHaveBeenCalledWith('Tabela_Mock_Pais', expect.any(Object));
     } finally {
@@ -152,7 +152,7 @@ describe('CriarPaisUseCase', () => {
     const useCase = new CriarPaisUseCase(repoMock);
     const event = createEvent(paisMockData);
 
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow(
       new PaisInvalidoError('Falha ao criar país.')
     );
   });

@@ -62,7 +62,7 @@ describe('ListarPaisUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarPaisUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '123456789');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Paises', {
       page: 1,
@@ -91,7 +91,7 @@ describe('ListarPaisUseCase', () => {
 
     const useCase = new ListarPaisUseCase(repoMock);
     const event = createEvent({ page: '2', limit: '5', sortBy: 'nome', sortOrder: 'desc' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '123456789');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Paises', {
       page: 2,
@@ -116,7 +116,7 @@ describe('ListarPaisUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarPaisUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '123456789');
 
     expect(result.Code).toBe(204);
     // Nota: A mensagem de retorno está incorreta no caso de uso, mas o teste valida o comportamento atual.
@@ -131,7 +131,7 @@ describe('ListarPaisUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarPaisUseCase(repoMock);
-    const result = await useCase.execute(createEvent({ page: '3' }));
+    const result = await useCase.execute(createEvent({ page: '3' }), '123456789');
 
     expect(result.Page).toBe(3); // Usa o valor do evento
     expect(result.TotalItems).toBe(2); // Fallback para o tamanho do array de dados
@@ -146,7 +146,7 @@ describe('ListarPaisUseCase', () => {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
       const useCase = new ListarPaisUseCase(repoMock);
 
-      await useCase.execute(createEvent(null));
+      await useCase.execute(createEvent(null), '123456789');
       expect(repoMock.getAll).toHaveBeenCalledWith('Tabela_Mock_Listar_Paises', expect.any(Object));
     } finally {
       process.env.TABELA_PAISES = originalEnv;
@@ -157,7 +157,9 @@ describe('ListarPaisUseCase', () => {
     repoMock.getAll.mockRejectedValueOnce(new Error('Erro interno do DB'));
 
     const useCase = new ListarPaisUseCase(repoMock);
-    await expect(useCase.execute(createEvent(null))).rejects.toThrow('Falha ao listar países.');
+    await expect(useCase.execute(createEvent(null), '123456789')).rejects.toThrow(
+      'Falha ao listar países.'
+    );
   });
 
   it('deve gerar links de next/prev omitindo sortBy e sortOrder se não forem fornecidos', async () => {
@@ -174,7 +176,7 @@ describe('ListarPaisUseCase', () => {
 
     const useCase = new ListarPaisUseCase(repoMock);
     const event = createEvent({ page: '2', limit: '5' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '123456789');
 
     expect(result.NextPage).toBe('?page=3&limit=5&sortBy=nomePortugues&sortOrder=asc');
     expect(result.PreviousPage).toBe('?page=1&limit=5&sortBy=nomePortugues&sortOrder=asc');

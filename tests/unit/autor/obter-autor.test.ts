@@ -29,7 +29,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ObterAutorUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  const idExecucao = 'test-execution-id';
 
   const autorMockData = {
     id: '1234567890',
@@ -82,10 +81,10 @@ describe('ObterAutorUseCase', () => {
     repoMock.findByMinhotecaId.mockResolvedValueOnce(mockResult);
     repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType); // Mock para livros
 
-    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
+    const useCase = new ObterAutorUseCase(repoMock);
     const event = createEvent({ id: '1234567890' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, 'execucao-123');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores', '1234567890');
     expect(result.Code).toBe(200);
@@ -102,10 +101,10 @@ describe('ObterAutorUseCase', () => {
     repoMock.findByMinhotecaId.mockResolvedValueOnce(mockResult);
     repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType); // Mock para livros
 
-    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
+    const useCase = new ObterAutorUseCase(repoMock);
     const event = createEvent(null, { id: '9999' });
 
-    await useCase.execute(event);
+    await useCase.execute(event, 'execucao-123');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores', '9999');
   });
@@ -114,10 +113,10 @@ describe('ObterAutorUseCase', () => {
     // Simulando retorno null que aciona a branch `if (result)` false
     repoMock.findByMinhotecaId.mockResolvedValueOnce(null as unknown as ResultType);
 
-    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
+    const useCase = new ObterAutorUseCase(repoMock);
     const event = createEvent({ id: 'nao-existe' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, 'execucao-123');
 
     expect(result.Code).toBe(404);
     expect(result.Message).toBe('Autor não encontrado.');
@@ -125,19 +124,19 @@ describe('ObterAutorUseCase', () => {
   });
 
   it('deve lançar erro genérico no log (e retornar falha) quando nenhum ID for informado', async () => {
-    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
+    const useCase = new ObterAutorUseCase(repoMock);
     const event = createEvent(null, null);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter autor.');
+    await expect(useCase.execute(event, 'execucao-123')).rejects.toThrow('Falha ao obter autor.');
   });
 
   it('deve lançar erro genérico quando o repositório falhar internamente', async () => {
     repoMock.findByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
 
-    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
+    const useCase = new ObterAutorUseCase(repoMock);
     const event = createEvent({ id: '123' });
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter autor.');
+    await expect(useCase.execute(event, 'execucao-123')).rejects.toThrow('Falha ao obter autor.');
     expect(getLogServiceErrorMock()).toHaveBeenCalled();
   });
 
@@ -148,9 +147,9 @@ describe('ObterAutorUseCase', () => {
     try {
       repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: autorMockData } as ResultType);
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
-      const useCase = new ObterAutorUseCase(repoMock, idExecucao);
+      const useCase = new ObterAutorUseCase(repoMock);
 
-      await useCase.execute(createEvent({ id: '999' }));
+      await useCase.execute(createEvent({ id: '999' }), 'execucao-123');
       expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Autor_Obter', '999');
     } finally {
       process.env.TABELA_AUTORES = originalEnv;
@@ -188,10 +187,10 @@ describe('ObterAutorUseCase', () => {
     repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: autorMockData } as ResultType);
     repoMock.getAll.mockResolvedValueOnce(mockLivros);
 
-    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
+    const useCase = new ObterAutorUseCase(repoMock);
     const event = createEvent({ id: '1234567890' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, 'execucao-123');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Livros', {
       filterKey: 'autorId',
@@ -236,10 +235,10 @@ describe('ObterAutorUseCase', () => {
     repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: autorMockData } as ResultType);
     repoMock.getAll.mockResolvedValueOnce(mockLivrosVazio);
 
-    const useCase = new ObterAutorUseCase(repoMock, idExecucao);
+    const useCase = new ObterAutorUseCase(repoMock);
     const event = createEvent({ id: '1234567890' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, 'execucao-123');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Livros', {
       filterKey: 'autorId',

@@ -18,7 +18,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ExcluirLivroUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
-  const idExecucao = 'test-execution-id';
 
   const mockResult: ResultType = {
     data: [],
@@ -67,10 +66,10 @@ describe('ExcluirLivroUseCase', () => {
 
   it('deve excluir um livro com sucesso quando o id for informado', async () => {
     repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
-    const useCase = new ExcluirLivroUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirLivroUseCase(repoMock);
 
     const event = createEvent({ id: '12345' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Livros', '12345');
     expect(result.Code).toBe(200);
@@ -78,19 +77,19 @@ describe('ExcluirLivroUseCase', () => {
   });
 
   it('deve retornar erro quando queryStringParameters for null (branch coverage)', async () => {
-    const useCase = new ExcluirLivroUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirLivroUseCase(repoMock);
 
     const event = createEvent(null);
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       'ID do livro é obrigatório para exclusão.'
     );
   });
 
   it('deve retornar erro quando o id não estiver presente no queryStringParameters (branch coverage)', async () => {
-    const useCase = new ExcluirLivroUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirLivroUseCase(repoMock);
 
     const event = createEvent({ outroParametro: 'abc' });
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       'ID do livro é obrigatório para exclusão.'
     );
   });
@@ -101,9 +100,9 @@ describe('ExcluirLivroUseCase', () => {
 
     try {
       repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
-      const useCase = new ExcluirLivroUseCase(repoMock, idExecucao);
+      const useCase = new ExcluirLivroUseCase(repoMock);
 
-      await useCase.execute(createEvent({ id: '999' }));
+      await useCase.execute(createEvent({ id: '999' }), '12345');
       expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Livro', '999');
     } finally {
       process.env.TABELA_LIVROS = originalEnv;
@@ -112,9 +111,9 @@ describe('ExcluirLivroUseCase', () => {
 
   it('deve tratar e lançar o erro correto quando o repositório falhar (branch coverage)', async () => {
     repoMock.deleteByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
-    const useCase = new ExcluirLivroUseCase(repoMock, idExecucao);
+    const useCase = new ExcluirLivroUseCase(repoMock);
 
-    await expect(useCase.execute(createEvent({ id: '12345' }))).rejects.toThrow(
+    await expect(useCase.execute(createEvent({ id: '12345' }), '12345')).rejects.toThrow(
       'Falha ao excluir livro.'
     );
     expect(getLogServiceErrorMock()).toHaveBeenCalled();
