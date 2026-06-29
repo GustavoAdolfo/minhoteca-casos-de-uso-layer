@@ -64,7 +64,7 @@ describe('AlterarPaisUseCase', () => {
 
     const useCase = new AlterarPaisUseCase(repoMock);
     const event = createEvent(paisMockData);
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '123456789');
 
     expect(repoMock.updateByMinhotecaId).toHaveBeenCalledWith(
       'Paises',
@@ -81,14 +81,14 @@ describe('AlterarPaisUseCase', () => {
     const useCase = new AlterarPaisUseCase(repoMock);
     const event = createEvent(dataWithoutId);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar país.');
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow('Falha ao alterar país.');
   });
 
   it('deve lançar erro quando o body do evento for vazio', async () => {
     const useCase = new AlterarPaisUseCase(repoMock);
     const event = createEvent(null);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar país.');
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow('Falha ao alterar país.');
     expect(repoMock.updateByMinhotecaId).not.toHaveBeenCalled();
   });
 
@@ -98,13 +98,13 @@ describe('AlterarPaisUseCase', () => {
     const useCase = new AlterarPaisUseCase(repoMock);
     const event = createEvent(paisMockData);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar país.');
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow('Falha ao alterar país.');
   });
 
   it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
     const useCase = new AlterarPaisUseCase(repoMock);
     const event = { body: '{ json-invalido ' } as APIGatewayEvent;
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar país.');
+    await expect(useCase.execute(event, '123456789')).rejects.toThrow('Falha ao alterar país.');
   });
 });

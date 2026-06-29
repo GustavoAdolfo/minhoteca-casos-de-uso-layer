@@ -18,7 +18,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 describe('ListarAutorUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
   let consoleErrorSpy: jest.SpyInstance;
-  const idExecucao = 'test-execution-id';
 
   const autorMockData = {
     id: '1234567890',
@@ -71,8 +70,8 @@ describe('ListarAutorUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarAutorUseCase(repoMock, idExecucao);
-    const result = await useCase.execute(createEvent(null));
+    const useCase = new ListarAutorUseCase(repoMock);
+    const result = await useCase.execute(createEvent(null), '1234567890');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Autores', {
       page: 1,
@@ -99,9 +98,9 @@ describe('ListarAutorUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarAutorUseCase(repoMock, idExecucao);
+    const useCase = new ListarAutorUseCase(repoMock);
     const event = createEvent({ page: '2', limit: '5', sortBy: 'pais', sortOrder: 'desc' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '1234567890');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Autores', {
       page: 2,
@@ -125,10 +124,10 @@ describe('ListarAutorUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarAutorUseCase(repoMock, idExecucao);
+    const useCase = new ListarAutorUseCase(repoMock);
     // Passando valores vazios para forçar o condicional (sortBy && sortOrder) a ser falso
     const event = createEvent({ page: '2', limit: '5', sortBy: '', sortOrder: '' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '1234567890');
 
     expect(result.NextPage).toContain('?page=3&limit=5');
     expect(result.PreviousPage).toContain('?page=1&limit=5');
@@ -146,8 +145,8 @@ describe('ListarAutorUseCase', () => {
     };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarAutorUseCase(repoMock, idExecucao);
-    const result = await useCase.execute(createEvent(null));
+    const useCase = new ListarAutorUseCase(repoMock);
+    const result = await useCase.execute(createEvent(null), '1234567890');
 
     expect(result.Code).toBe(204);
     expect(result.Message).toBe('Nenhum autor encontrado');
@@ -161,8 +160,8 @@ describe('ListarAutorUseCase', () => {
     } as ResultType;
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
-    const useCase = new ListarAutorUseCase(repoMock, idExecucao);
-    const result = await useCase.execute(createEvent(null));
+    const useCase = new ListarAutorUseCase(repoMock);
+    const result = await useCase.execute(createEvent(null), '1234567890');
 
     // Como default do useCase: page = 1
     expect(result.Page).toBe(1);
@@ -183,8 +182,8 @@ describe('ListarAutorUseCase', () => {
 
     repoMock.getAll.mockResolvedValueOnce({ data: [dataSemId] } as ResultType);
 
-    const useCase = new ListarAutorUseCase(repoMock, idExecucao);
-    const result = await useCase.execute(createEvent(null));
+    const useCase = new ListarAutorUseCase(repoMock);
+    const result = await useCase.execute(createEvent(null), '1234567890');
 
     expect(result.Code).toBe(200);
     // O adapter e entity lidaram graciosamente com a falta do ID (ou geraram/usaram fallback vazio)
@@ -197,9 +196,9 @@ describe('ListarAutorUseCase', () => {
 
     try {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
-      const useCase = new ListarAutorUseCase(repoMock, idExecucao);
+      const useCase = new ListarAutorUseCase(repoMock);
 
-      await useCase.execute(createEvent(null));
+      await useCase.execute(createEvent(null), '1234567890');
       expect(repoMock.getAll).toHaveBeenCalledWith(
         'Tabela_Mock_Listar_Autores',
         expect.any(Object)
@@ -212,7 +211,9 @@ describe('ListarAutorUseCase', () => {
   it('deve capturar e relançar erro padrão quando ocorrer uma falha', async () => {
     repoMock.getAll.mockRejectedValueOnce(new Error('Erro interno do DB'));
 
-    const useCase = new ListarAutorUseCase(repoMock, idExecucao);
-    await expect(useCase.execute(createEvent(null))).rejects.toThrow('Falha ao listar autores.');
+    const useCase = new ListarAutorUseCase(repoMock);
+    await expect(useCase.execute(createEvent(null), '1234567890')).rejects.toThrow(
+      'Falha ao listar autores.'
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { AlterarEditoraUseCase } from '../../../layer/nodejs/src/editora/alterar-editora';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
+import { EditoraAdapter } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda';
 
 // Realizamos o mock parcial da camada core para isolar os testes do UseCase
@@ -61,7 +62,7 @@ describe('AlterarEditoraUseCase', () => {
 
     const useCase = new AlterarEditoraUseCase(repoMock);
     const event = createEvent(editoraMockData);
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.updateByMinhotecaId).toHaveBeenCalledWith(
       'Editoras',
@@ -78,7 +79,7 @@ describe('AlterarEditoraUseCase', () => {
     const useCase = new AlterarEditoraUseCase(repoMock);
     const event = createEvent(dataWithoutId);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar editora.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar editora.');
     expect(repoMock.updateByMinhotecaId).not.toHaveBeenCalled();
   });
 
@@ -86,7 +87,7 @@ describe('AlterarEditoraUseCase', () => {
     const useCase = new AlterarEditoraUseCase(repoMock);
     const event = createEvent(null);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar editora.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar editora.');
     expect(repoMock.updateByMinhotecaId).not.toHaveBeenCalled();
   });
 
@@ -96,13 +97,25 @@ describe('AlterarEditoraUseCase', () => {
     const useCase = new AlterarEditoraUseCase(repoMock);
     const event = createEvent(editoraMockData);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar editora.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar editora.');
   });
 
   it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
     const useCase = new AlterarEditoraUseCase(repoMock);
     const event = { body: '{ json-invalido ' } as APIGatewayEvent;
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar editora.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar editora.');
+  });
+
+  it('deve lançar erro se a criação da entidade falhar', async () => {
+    // Força um erro na criação da entidade a partir do DTO
+    jest.spyOn(EditoraAdapter, 'fromCreateDTO').mockImplementationOnce(() => {
+      throw new Error('Erro de validação da entidade');
+    });
+
+    const useCase = new AlterarEditoraUseCase(repoMock);
+    const event = createEvent(editoraMockData);
+
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar editora.');
   });
 });

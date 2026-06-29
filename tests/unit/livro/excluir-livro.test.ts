@@ -69,7 +69,7 @@ describe('ExcluirLivroUseCase', () => {
     const useCase = new ExcluirLivroUseCase(repoMock);
 
     const event = createEvent({ id: '12345' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Livros', '12345');
     expect(result.Code).toBe(200);
@@ -80,7 +80,7 @@ describe('ExcluirLivroUseCase', () => {
     const useCase = new ExcluirLivroUseCase(repoMock);
 
     const event = createEvent(null);
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       'ID do livro é obrigatório para exclusão.'
     );
   });
@@ -89,7 +89,7 @@ describe('ExcluirLivroUseCase', () => {
     const useCase = new ExcluirLivroUseCase(repoMock);
 
     const event = createEvent({ outroParametro: 'abc' });
-    await expect(useCase.execute(event)).rejects.toThrow(
+    await expect(useCase.execute(event, '12345')).rejects.toThrow(
       'ID do livro é obrigatório para exclusão.'
     );
   });
@@ -102,7 +102,7 @@ describe('ExcluirLivroUseCase', () => {
       repoMock.deleteByMinhotecaId.mockResolvedValueOnce(mockResult);
       const useCase = new ExcluirLivroUseCase(repoMock);
 
-      await useCase.execute(createEvent({ id: '999' }));
+      await useCase.execute(createEvent({ id: '999' }), '12345');
       expect(repoMock.deleteByMinhotecaId).toHaveBeenCalledWith('Tabela_Mock_Livro', '999');
     } finally {
       process.env.TABELA_LIVROS = originalEnv;
@@ -113,7 +113,7 @@ describe('ExcluirLivroUseCase', () => {
     repoMock.deleteByMinhotecaId.mockRejectedValueOnce(new Error('Erro interno no banco de dados'));
     const useCase = new ExcluirLivroUseCase(repoMock);
 
-    await expect(useCase.execute(createEvent({ id: '12345' }))).rejects.toThrow(
+    await expect(useCase.execute(createEvent({ id: '12345' }), '12345')).rejects.toThrow(
       'Falha ao excluir livro.'
     );
     expect(getLogServiceErrorMock()).toHaveBeenCalled();

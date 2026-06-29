@@ -72,7 +72,7 @@ describe('AlterarLivroUseCase', () => {
 
     const useCase = new AlterarLivroUseCase(repoMock);
     const event = createEvent(livroMockData);
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.updateByMinhotecaId).toHaveBeenCalledWith(
       'Livros',
@@ -89,7 +89,7 @@ describe('AlterarLivroUseCase', () => {
     const useCase = new AlterarLivroUseCase(repoMock);
     const event = createEvent(dataWithoutId);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar livro.');
     expect(repoMock.updateByMinhotecaId).not.toHaveBeenCalled();
   });
 
@@ -97,7 +97,7 @@ describe('AlterarLivroUseCase', () => {
     const useCase = new AlterarLivroUseCase(repoMock);
     const event = createEvent(null);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar livro.');
     expect(repoMock.updateByMinhotecaId).not.toHaveBeenCalled();
   });
 
@@ -107,13 +107,13 @@ describe('AlterarLivroUseCase', () => {
     const useCase = new AlterarLivroUseCase(repoMock);
     const event = createEvent(livroMockData);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar livro.');
   });
 
   it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
     const useCase = new AlterarLivroUseCase(repoMock);
     const event = { body: '{ json-invalido ' } as APIGatewayEvent;
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao alterar livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao alterar livro.');
   });
 });

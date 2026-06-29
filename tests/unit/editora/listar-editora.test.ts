@@ -71,7 +71,7 @@ describe('ListarEditoraUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarEditoraUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '12345');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Editoras', {
       page: 1,
@@ -100,7 +100,7 @@ describe('ListarEditoraUseCase', () => {
 
     const useCase = new ListarEditoraUseCase(repoMock);
     const event = createEvent({ page: '2', limit: '5', sortBy: 'pais', sortOrder: 'desc' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Editoras', {
       page: 2,
@@ -127,7 +127,7 @@ describe('ListarEditoraUseCase', () => {
     const useCase = new ListarEditoraUseCase(repoMock);
     // Passando valores vazios para forçar o condicional (sortBy && sortOrder) a ser falso
     const event = createEvent({ page: '2', limit: '5', sortBy: '', sortOrder: '' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(result.NextPage).toContain('?page=3&limit=5');
     expect(result.PreviousPage).toContain('?page=1&limit=5');
@@ -146,7 +146,7 @@ describe('ListarEditoraUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarEditoraUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '12345');
 
     expect(result.Code).toBe(204);
     expect(result.Message).toBe('Nenhuma editora encontrada');
@@ -161,7 +161,7 @@ describe('ListarEditoraUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarEditoraUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '12345');
 
     // Como default do useCase: page = 1
     expect(result.Page).toBe(1);
@@ -183,7 +183,7 @@ describe('ListarEditoraUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce({ data: [dataSemId] } as ResultType);
 
     const useCase = new ListarEditoraUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '12345');
 
     expect(result.Code).toBe(200);
     // O adapter e entity lidaram graciosamente com a falta do ID (ou geraram/usaram fallback vazio)
@@ -198,7 +198,7 @@ describe('ListarEditoraUseCase', () => {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
       const useCase = new ListarEditoraUseCase(repoMock);
 
-      await useCase.execute(createEvent(null));
+      await useCase.execute(createEvent(null), '12345');
       expect(repoMock.getAll).toHaveBeenCalledWith(
         'Tabela_Mock_Listar_Editoras',
         expect.any(Object)
@@ -212,6 +212,8 @@ describe('ListarEditoraUseCase', () => {
     repoMock.getAll.mockRejectedValueOnce(new Error('Erro interno do DB'));
 
     const useCase = new ListarEditoraUseCase(repoMock);
-    await expect(useCase.execute(createEvent(null))).rejects.toThrow('Falha ao listar editoras.');
+    await expect(useCase.execute(createEvent(null), '12345')).rejects.toThrow(
+      'Falha ao listar editoras.'
+    );
   });
 });

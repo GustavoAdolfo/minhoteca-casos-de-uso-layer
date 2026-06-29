@@ -19,7 +19,6 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 describe('CriarAutorUseCase', () => {
   let mongoRepoMock: jest.Mocked<RepositoryInterface>;
   let dynamoRepoMock: jest.Mocked<RepositoryInterface>;
-  const idExecucao = 'test-execution-id';
 
   // Utilizamos o modelo de dados real extraído do arquivo de mock
   const autorCreateBody = {
@@ -74,9 +73,9 @@ describe('CriarAutorUseCase', () => {
       const mockResult: ResultType = { data: {} } as ResultType;
       mongoRepoMock.saveData.mockResolvedValueOnce(mockResult);
 
-      const useCase = new CriarAutorUseCase(mongoRepoMock, idExecucao);
+      const useCase = new CriarAutorUseCase(mongoRepoMock);
       const event = createEvent(autorCreateBody);
-      const result = await useCase.execute(event);
+      const result = await useCase.execute(event, '1234567890');
 
       expect(mongoRepoMock.saveData).toHaveBeenCalledWith(
         'Autores',
@@ -101,10 +100,10 @@ describe('CriarAutorUseCase', () => {
       mongoError.name = 'MongoServerError';
       mongoRepoMock.saveData.mockRejectedValueOnce(mongoError);
 
-      const useCase = new CriarAutorUseCase(mongoRepoMock, idExecucao);
-      await expect(useCase.execute(createEvent({ nome: autorCreateBody.nome }))).rejects.toThrow(
-        'Falha ao criar autor.'
-      );
+      const useCase = new CriarAutorUseCase(mongoRepoMock);
+      await expect(
+        useCase.execute(createEvent({ nome: autorCreateBody.nome }), '1234567890')
+      ).rejects.toThrow('Falha ao criar autor.');
       expect(mongoRepoMock.saveData).toHaveBeenCalled();
     });
   });
@@ -115,9 +114,9 @@ describe('CriarAutorUseCase', () => {
       const mockResult: ResultType = { data: {} } as ResultType;
       dynamoRepoMock.saveData.mockResolvedValueOnce(mockResult);
 
-      const useCase = new CriarAutorUseCase(dynamoRepoMock, idExecucao);
+      const useCase = new CriarAutorUseCase(dynamoRepoMock);
       const event = createEvent(autorCreateBody);
-      const result = await useCase.execute(event);
+      const result = await useCase.execute(event, '1234567890');
 
       expect(dynamoRepoMock.saveData).toHaveBeenCalledWith(
         'Autores',
@@ -140,27 +139,27 @@ describe('CriarAutorUseCase', () => {
       dynamoError.name = 'ProvisionedThroughputExceededException';
       dynamoRepoMock.saveData.mockRejectedValueOnce(dynamoError);
 
-      const useCase = new CriarAutorUseCase(dynamoRepoMock, idExecucao);
-      await expect(useCase.execute(createEvent({ nome: autorCreateBody.nome }))).rejects.toThrow(
-        'Falha ao criar autor.'
-      );
+      const useCase = new CriarAutorUseCase(dynamoRepoMock);
+      await expect(
+        useCase.execute(createEvent({ nome: autorCreateBody.nome }), '1234567890')
+      ).rejects.toThrow('Falha ao criar autor.');
     });
   });
 
   describe('Cenários de borda', () => {
     it('deve falhar ao tratar data.body nulo devido a erro de validação (fallback para objeto vazio)', async () => {
       const spyAdapter = jest.spyOn(AutorAdapter, 'fromCreateDTO');
-      const useCase = new CriarAutorUseCase(dynamoRepoMock, idExecucao);
+      const useCase = new CriarAutorUseCase(dynamoRepoMock);
       const event = createEvent(null);
 
-      await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar autor.');
+      await expect(useCase.execute(event, '1234567890')).rejects.toThrow('Falha ao criar autor.');
       expect(spyAdapter).toHaveBeenCalledWith({});
     });
 
     it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
-      const useCase = new CriarAutorUseCase(mongoRepoMock, idExecucao);
+      const useCase = new CriarAutorUseCase(mongoRepoMock);
       const event = { body: '{ invalid json' } as APIGatewayEvent;
-      await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar autor.');
+      await expect(useCase.execute(event, '1234567890')).rejects.toThrow('Falha ao criar autor.');
     });
   });
 });

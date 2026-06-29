@@ -14,17 +14,14 @@ export class AlterarAutorUseCase implements UseCaseInterface {
   private _tabelaAutores: string;
   private logService = new LogService('AlterarAutorUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     this.logService.info(
       'Início a execução do caso de uso AlterarAutorUseCase',
-      { label: 'AlterarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
+      { label: 'AlterarAutorUseCase', ...(idExecucao && { logId: idExecucao }) },
       { data }
     );
     try {
@@ -34,7 +31,7 @@ export class AlterarAutorUseCase implements UseCaseInterface {
           'ID do Autor é obrigatório para alteração.',
           {
             label: 'AlterarAutorUseCase',
-            ...(this.idExecucao && { logId: this.idExecucao }),
+            ...(idExecucao && { logId: idExecucao }),
           },
           undefined,
           { dto }
@@ -54,7 +51,7 @@ export class AlterarAutorUseCase implements UseCaseInterface {
     } catch (error) {
       this.logService.error(
         'Erro ao alterar Autor:',
-        { label: 'AlterarAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
+        { label: 'AlterarAutorUseCase', ...(idExecucao && { logId: idExecucao }) },
         error as Error,
         { data }
       );
