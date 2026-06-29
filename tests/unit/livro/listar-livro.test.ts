@@ -82,7 +82,7 @@ describe('ListarLivroUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarLivroUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '12345');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Livros', {
       page: 1,
@@ -111,7 +111,7 @@ describe('ListarLivroUseCase', () => {
 
     const useCase = new ListarLivroUseCase(repoMock);
     const event = createEvent({ page: '2', limit: '5', sortBy: 'titulo', sortOrder: 'desc' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.getAll).toHaveBeenCalledWith('Livros', {
       page: 2,
@@ -138,7 +138,7 @@ describe('ListarLivroUseCase', () => {
     const useCase = new ListarLivroUseCase(repoMock);
     // Passando valores vazios para forçar o condicional (sortBy && sortOrder) a ser falso
     const event = createEvent({ page: '2', limit: '5', sortBy: '', sortOrder: '' });
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(result.NextPage).toContain('?page=3&limit=5');
     expect(result.PreviousPage).toContain('?page=1&limit=5');
@@ -157,7 +157,7 @@ describe('ListarLivroUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarLivroUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '12345');
 
     expect(result.Code).toBe(204);
     expect(result.Message).toBe('Nenhum livro encontrado');
@@ -172,7 +172,7 @@ describe('ListarLivroUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarLivroUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '12345');
 
     // Como default do useCase: page = 1
     expect(result.Page).toBe(1);
@@ -196,7 +196,7 @@ describe('ListarLivroUseCase', () => {
     repoMock.getAll.mockResolvedValueOnce({ data: [dataSemId] } as ResultType);
 
     const useCase = new ListarLivroUseCase(repoMock);
-    const result = await useCase.execute(createEvent(null));
+    const result = await useCase.execute(createEvent(null), '12345');
 
     expect(result.Code).toBe(200);
     // O adapter e entity lidaram graciosamente com a falta do ID (ou geraram/usaram fallback vazio)
@@ -211,7 +211,7 @@ describe('ListarLivroUseCase', () => {
       repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
       const useCase = new ListarLivroUseCase(repoMock);
 
-      await useCase.execute(createEvent(null));
+      await useCase.execute(createEvent(null), '12345');
       expect(repoMock.getAll).toHaveBeenCalledWith('Tabela_Mock_Listar_Livros', expect.any(Object));
     } finally {
       process.env.TABELA_LIVROS = originalEnv;
@@ -222,6 +222,8 @@ describe('ListarLivroUseCase', () => {
     repoMock.getAll.mockRejectedValueOnce(new Error('Erro interno do DB'));
 
     const useCase = new ListarLivroUseCase(repoMock);
-    await expect(useCase.execute(createEvent(null))).rejects.toThrow('Falha ao listar livros.');
+    await expect(useCase.execute(createEvent(null), '12345')).rejects.toThrow(
+      'Falha ao listar livros.'
+    );
   });
 });

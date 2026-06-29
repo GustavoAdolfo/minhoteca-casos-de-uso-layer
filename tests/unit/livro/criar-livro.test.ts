@@ -110,7 +110,7 @@ describe('CriarLivroUseCase', () => {
 
       const useCase = new CriarLivroUseCase(mongoRepoMock);
       const event = createEvent(livroCreateBody);
-      const result = await useCase.execute(event);
+      const result = await useCase.execute(event, '12345');
 
       expect(mongoRepoMock.saveData).toHaveBeenCalledWith(
         'Livros',
@@ -139,7 +139,7 @@ describe('CriarLivroUseCase', () => {
       mongoRepoMock.saveData.mockRejectedValueOnce(mongoError);
 
       const useCase = new CriarLivroUseCase(mongoRepoMock);
-      await expect(useCase.execute(createEvent(livroCreateBody))).rejects.toThrow(
+      await expect(useCase.execute(createEvent(livroCreateBody), '12345')).rejects.toThrow(
         'Falha ao criar livro.'
       );
       expect(mongoRepoMock.saveData).toHaveBeenCalled();
@@ -161,7 +161,7 @@ describe('CriarLivroUseCase', () => {
 
       const useCase = new CriarLivroUseCase(dynamoRepoMock);
       const event = createEvent(livroCreateBody);
-      const result = await useCase.execute(event);
+      const result = await useCase.execute(event, '12345');
 
       expect(dynamoRepoMock.saveData).toHaveBeenCalledWith(
         'Livros',
@@ -193,7 +193,7 @@ describe('CriarLivroUseCase', () => {
       dynamoRepoMock.saveData.mockRejectedValueOnce(dynamoError);
 
       const useCase = new CriarLivroUseCase(dynamoRepoMock);
-      await expect(useCase.execute(createEvent(livroCreateBody))).rejects.toThrow(
+      await expect(useCase.execute(createEvent(livroCreateBody), '12345')).rejects.toThrow(
         'Falha ao criar livro.'
       );
     });
@@ -205,14 +205,14 @@ describe('CriarLivroUseCase', () => {
       const useCase = new CriarLivroUseCase(dynamoRepoMock);
       const event = createEvent(null);
 
-      await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar livro.');
+      await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao criar livro.');
       expect(spyAdapter).toHaveBeenCalledWith({});
     });
 
     it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
       const useCase = new CriarLivroUseCase(mongoRepoMock);
       const event = { body: '{ invalid json' } as APIGatewayEvent;
-      await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar livro.');
+      await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao criar livro.');
     });
   });
 });

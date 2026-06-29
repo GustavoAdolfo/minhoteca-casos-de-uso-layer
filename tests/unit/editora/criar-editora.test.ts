@@ -98,7 +98,7 @@ describe('CriarEditoraUseCase', () => {
 
       const useCase = new CriarEditoraUseCase(mongoRepoMock);
       const event = createEvent(editoraMockData);
-      const result = await useCase.execute(event);
+      const result = await useCase.execute(event, '12345');
 
       expect(mongoRepoMock.saveData).toHaveBeenCalledWith('Editoras', editoraMockData);
       expect(result.Code).toBe(201);
@@ -111,9 +111,9 @@ describe('CriarEditoraUseCase', () => {
       mongoRepoMock.saveData.mockRejectedValueOnce(mongoError);
 
       const useCase = new CriarEditoraUseCase(mongoRepoMock);
-      await expect(useCase.execute(createEvent({ nome: editoraMockData.nome }))).rejects.toThrow(
-        'Falha ao criar editora.'
-      );
+      await expect(
+        useCase.execute(createEvent({ nome: editoraMockData.nome }), '12345')
+      ).rejects.toThrow('Falha ao criar editora.');
       expect(mongoRepoMock.saveData).toHaveBeenCalled();
     });
   });
@@ -134,7 +134,7 @@ describe('CriarEditoraUseCase', () => {
 
       const useCase = new CriarEditoraUseCase(dynamoRepoMock);
       const event = createEvent(editoraMockData);
-      const result = await useCase.execute(event);
+      const result = await useCase.execute(event, '12345');
 
       expect(dynamoRepoMock.saveData).toHaveBeenCalledWith('Editoras', editoraMockData);
       expect(result.Code).toBe(201);
@@ -150,9 +150,9 @@ describe('CriarEditoraUseCase', () => {
       dynamoRepoMock.saveData.mockRejectedValueOnce(dynamoError);
 
       const useCase = new CriarEditoraUseCase(dynamoRepoMock);
-      await expect(useCase.execute(createEvent({ nome: editoraMockData.nome }))).rejects.toThrow(
-        'Falha ao criar editora.'
-      );
+      await expect(
+        useCase.execute(createEvent({ nome: editoraMockData.nome }), '12345')
+      ).rejects.toThrow('Falha ao criar editora.');
     });
   });
 
@@ -162,14 +162,14 @@ describe('CriarEditoraUseCase', () => {
       const useCase = new CriarEditoraUseCase(dynamoRepoMock);
       const event = createEvent(null);
 
-      await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar editora.');
+      await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao criar editora.');
       expect(spyAdapter).toHaveBeenCalledWith({});
     });
 
     it('deve lançar erro quando houver erro de parsing no JSON (body inválido)', async () => {
       const useCase = new CriarEditoraUseCase(mongoRepoMock);
       const event = { body: '{ invalid json' } as APIGatewayEvent;
-      await expect(useCase.execute(event)).rejects.toThrow('Falha ao criar editora.');
+      await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao criar editora.');
     });
   });
 });

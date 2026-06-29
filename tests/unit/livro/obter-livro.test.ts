@@ -72,7 +72,7 @@ describe('ObterLivroUseCase', () => {
     const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'livro-123' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-123');
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores', 'autor-456');
@@ -93,7 +93,7 @@ describe('ObterLivroUseCase', () => {
     const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'livro-123' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-123');
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores', 'autor-456');
@@ -109,7 +109,7 @@ describe('ObterLivroUseCase', () => {
     const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'nao-existe' });
 
-    const result = await useCase.execute(event);
+    const result = await useCase.execute(event, '12345');
 
     expect(result.Code).toBe(404);
     expect(result.Message).toBe('Livro não encontrado.');
@@ -123,7 +123,7 @@ describe('ObterLivroUseCase', () => {
     const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent(null, null);
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao obter livro.');
     expect(getLogServiceMock('error')).toHaveBeenCalledWith(
       'Falha ao obter livro:',
       expect.any(Object),
@@ -139,7 +139,7 @@ describe('ObterLivroUseCase', () => {
     const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent(null, { id: 'livro-qs-123' });
 
-    await useCase.execute(event);
+    await useCase.execute(event, '12345');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-qs-123');
   });
@@ -155,7 +155,7 @@ describe('ObterLivroUseCase', () => {
     const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'livro-123' });
 
-    await useCase.execute(event);
+    await useCase.execute(event, '12345');
 
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros_Test', 'livro-123');
     expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Autores_Test', 'autor-456');
@@ -171,7 +171,7 @@ describe('ObterLivroUseCase', () => {
     const useCase = new ObterLivroUseCase(repoMock);
     const event = createEvent({ id: 'livro-123' });
 
-    await expect(useCase.execute(event)).rejects.toThrow('Falha ao obter livro.');
+    await expect(useCase.execute(event, '12345')).rejects.toThrow('Falha ao obter livro.');
     expect(getLogServiceMock('error')).toHaveBeenCalledWith(
       'Falha ao obter livro:',
       expect.any(Object),

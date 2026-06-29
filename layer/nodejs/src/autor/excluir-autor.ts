@@ -13,25 +13,22 @@ export class ExcluirAutorUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
   private logService = new LogService('ExcluirAutorUseCase');
 
-  constructor(
-    private _repository: RepositoryInterface,
-    private idExecucao?: string
-  ) {
+  constructor(private _repository: RepositoryInterface) {
     this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
-  async execute(data: APIGatewayEvent): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
     this.logService.info(
       '🏁 Iniciando caso de uso de excluir autor.',
-      { label: 'ExcluirAutorUseCase', ...(this.idExecucao && { logId: this.idExecucao }) },
+      { label: 'ExcluirAutorUseCase', ...(idExecucao && { logId: idExecucao }) },
       { data }
     );
     const autorId = data.queryStringParameters?.id;
     if (!autorId) {
       this.logService.warn('ID do autor não fornecido.', {
         label: 'ExcluirAutorUseCase',
-        ...(this.idExecucao && { logId: this.idExecucao }),
+        ...(idExecucao && { logId: idExecucao }),
       });
       throw new AutorInvalidoError('ID do autor é obrigatório para exclusão.');
     }
@@ -44,7 +41,7 @@ export class ExcluirAutorUseCase implements UseCaseInterface {
         `Não é possível excluir o autor ${autorId} porque existem livros associados a ele.`,
         {
           label: 'ExcluirAutorUseCase',
-          ...(this.idExecucao && { logId: this.idExecucao }),
+          ...(idExecucao && { logId: idExecucao }),
           autorId,
         }
       );
@@ -64,7 +61,7 @@ export class ExcluirAutorUseCase implements UseCaseInterface {
         'Erro ao excluir autor:',
         {
           label: 'ExcluirAutorUseCase',
-          ...(this.idExecucao && { logId: this.idExecucao }),
+          ...(idExecucao && { logId: idExecucao }),
           autorId,
         },
         error as Error,
