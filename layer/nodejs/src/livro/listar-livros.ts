@@ -1,4 +1,7 @@
 import {
+  Autor,
+  AutorDTO,
+  AutorAdapter,
   Livro,
   LivroAdapter,
   LivroDTO,
@@ -73,6 +76,44 @@ export class ListarLivroUseCase implements UseCaseInterface {
       );
 
       const livros: LivroDTO[] = LivroAdapter.toDTOList(entities);
+      const autoresIds = livros
+        .map((livro) => livro.autorId)
+        .filter((id) => !!id)
+        .reduce((acc: string[], id: string) => {
+          if (!acc.includes(id)) {
+            acc.push(id);
+          }
+          return acc;
+        }, []);
+      this.logService.info(
+        '✅ IDs de autores extraídos dos livros.',
+        { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
+        { autoresIds }
+      );
+
+      const autores: ResultType = await this._repository.getListByMinhotecaIds(
+        'Autores',
+        autoresIds
+      );
+      this.logService.info(
+        '✅ Dados de autores recuperados.',
+        { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
+        { autores }
+      );
+
+      const autoresDtoMap: AutorDTO[] = AutorAdapter.toDTOList((autores?.data as Autor[]) ?? []);
+      livros.forEach((livro) => {
+        const autor = autoresDtoMap.find((autor) => autor.id === livro.autorId);
+        if (autor) {
+          livro.autor = autor;
+        }
+      });
+      this.logService.info(
+        '✅ Mapeamento de autores criado.',
+        { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
+        { autoresDtoMap }
+      );
+
       return createResult(
         livros,
         livros.length > 0 ? 200 : 204,
