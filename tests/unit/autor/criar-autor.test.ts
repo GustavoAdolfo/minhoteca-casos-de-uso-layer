@@ -49,6 +49,7 @@ describe('CriarAutorUseCase', () => {
       deleteByMinhotecaId: jest.fn(),
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
+      getListByMinhotecaIds: jest.fn(),
     } as jest.Mocked<RepositoryInterface>;
 
     dynamoRepoMock = {
@@ -60,6 +61,7 @@ describe('CriarAutorUseCase', () => {
       deleteByMinhotecaId: jest.fn(),
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
+      getListByMinhotecaIds: jest.fn(),
     } as jest.Mocked<RepositoryInterface>;
   });
 

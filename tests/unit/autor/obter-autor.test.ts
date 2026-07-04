@@ -50,6 +50,7 @@ describe('ObterAutorUseCase', () => {
       deleteByMinhotecaId: jest.fn(),
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
+      getListByMinhotecaIds: jest.fn(),
     } as jest.Mocked<RepositoryInterface>;
   });
 
