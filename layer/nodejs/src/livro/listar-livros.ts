@@ -90,17 +90,21 @@ export class ListarLivroUseCase implements UseCaseInterface {
         { autoresIds }
       );
 
-      const autores: ResultType = await this._repository.getListByMinhotecaIds(
-        'Autores',
-        autoresIds
-      );
+      const autores: ResultType = autoresIds.length
+        ? await this._repository.getListByMinhotecaIds('Autores', autoresIds)
+        : ({ data: [] } as ResultType);
       this.logService.info(
         '✅ Dados de autores recuperados.',
-        { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
+        {
+          label: 'ListarLivroUseCase',
+          ...(idExecucao && { logId: idExecucao }),
+          totalAutores: Array.isArray(autores?.data) ? autores.data.length : 0,
+        },
         { autores }
       );
 
-      const autoresDtoMap = (autores?.data as object[]).map((item) => {
+      const autoresData = Array.isArray(autores?.data) ? autores.data : [];
+      const autoresDtoMap = autoresData.map((item) => {
         const autorEntity = Autor.create(item, Object.getOwnPropertyDescriptor(item, 'id')?.value);
         return AutorAdapter.toDTO(autorEntity);
       });

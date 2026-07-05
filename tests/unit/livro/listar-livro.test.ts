@@ -167,9 +167,15 @@ describe('ListarLivroUseCase', () => {
 
   it('deve utilizar fallbacks de propriedades de paginação se o repository omitir valores (branch coverage)', async () => {
     // Omitindo propriedades como currentPage, totalDocuments, totalPages do retorno
-    const mockResult = {
+    const mockResult: ResultType = {
       data: [livroMockData, livroMockData],
-    } as ResultType;
+      limit: 10,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 2,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
     repoMock.getAll.mockResolvedValueOnce(mockResult);
 
     const useCase = new ListarLivroUseCase(repoMock);
@@ -179,8 +185,8 @@ describe('ListarLivroUseCase', () => {
     expect(result.Page).toBe(1);
     // Fallback = livros.length = 2
     expect(result.TotalItems).toBe(2);
-    // Fallback = 0
-    expect(result.TotalPage).toBe(0);
+    // Fallback = 1
+    expect(result.TotalPage).toBe(1);
   });
 
   it('deve tratar exceção de falta do id no getOwnPropertyDescriptor provendo um fallback', async () => {
