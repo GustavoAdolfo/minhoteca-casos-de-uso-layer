@@ -1,8 +1,7 @@
 import {
   Autor,
-  AutorDTO,
-  AutorAdapter,
   Livro,
+  AutorAdapter,
   LivroAdapter,
   LivroDTO,
   LivroInterface,
@@ -101,8 +100,11 @@ export class ListarLivroUseCase implements UseCaseInterface {
         { autores }
       );
 
-      const autoresDtoMap: AutorDTO[] = AutorAdapter.toDTOList((autores?.data as Autor[]) ?? []);
-      livros.forEach((livro) => {
+      const autoresDtoMap = (autores?.data as object[]).map((item) => {
+        const autorEntity = Autor.create(item, Object.getOwnPropertyDescriptor(item, 'id')?.value);
+        return AutorAdapter.toDTO(autorEntity);
+      });
+      livros.forEach((livro: LivroDTO) => {
         const autor = autoresDtoMap.find((autor) => autor.id === livro.autorId);
         if (autor) {
           livro.autor = autor;
