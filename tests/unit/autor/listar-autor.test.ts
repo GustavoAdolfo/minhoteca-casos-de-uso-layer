@@ -113,6 +113,38 @@ describe('ListarAutorUseCase', () => {
     expect(result.PreviousPage).toBe('?page=1&limit=5&sortBy=pais&sortOrder=desc');
   });
 
+  it('deve mapear sort[campo] e filter[campo] para sortBy/sortOrder e filterKey/filterValue', async () => {
+    const mockResult: ResultType = {
+      data: [autorMockData],
+      limit: 20,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+    repoMock.getAll.mockResolvedValueOnce(mockResult);
+
+    const useCase = new ListarAutorUseCase(repoMock);
+    const event = createEvent({
+      page: '1',
+      limit: '20',
+      'sort[nome]': 'asc',
+      'filter[nome]': 'gustavo',
+    });
+
+    await useCase.execute(event, '1234567890');
+
+    expect(repoMock.getAll).toHaveBeenCalledWith('Autores', {
+      page: 1,
+      limit: 20,
+      sortBy: 'nome',
+      sortOrder: 'asc',
+      filterKey: 'nome',
+      filterValue: 'gustavo',
+    });
+  });
+
   it('deve gerar links de next/prev omitindo sortBy e sortOrder caso sejam ignorados', async () => {
     const mockResult: ResultType = {
       data: [autorMockData],
