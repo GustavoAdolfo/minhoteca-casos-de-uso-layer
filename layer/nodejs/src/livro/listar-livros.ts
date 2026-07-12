@@ -36,8 +36,20 @@ export class ListarLivroUseCase implements UseCaseInterface {
       const limit = data.queryStringParameters?.limit
         ? parseInt(data.queryStringParameters.limit, 10)
         : 10;
-      const sortBy = data.queryStringParameters?.sortBy || 'titulo';
-      const sortOrder = data.queryStringParameters?.sortOrder || 'asc';
+      const queryParams = data.queryStringParameters ?? {};
+      const sortEntry = Object.entries(queryParams).find(
+        ([key]) => key.startsWith('sort[') && key.endsWith(']')
+      );
+      const filterEntry = Object.entries(queryParams).find(
+        ([key]) => key.startsWith('filter[') && key.endsWith(']')
+      );
+
+      const sortBy =
+        queryParams.sortBy || (sortEntry ? sortEntry[0].slice('sort['.length, -1) : '') || 'titulo';
+      const sortOrder = queryParams.sortOrder || sortEntry?.[1] || 'asc';
+      const filterKey =
+        queryParams.filterKey || (filterEntry ? filterEntry[0].slice('filter['.length, -1) : '');
+      const filterValue = queryParams.filterValue || filterEntry?.[1] || queryParams.filter || '';
       this.logService.info(
         '🔍 Informações para buscar livros definidas.',
         { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
@@ -46,15 +58,20 @@ export class ListarLivroUseCase implements UseCaseInterface {
           limit,
           sortBy,
           sortOrder,
+          filterKey,
+          filterValue,
         }
       );
 
-      const result: ResultType = await this._repository.getAll(this._tabelaLivros, {
+      const queryOptions = {
         page,
         limit,
         sortBy,
         sortOrder,
-      });
+        ...(filterKey && filterValue && { filterKey, filterValue }),
+      };
+
+      const result: ResultType = await this._repository.getAll(this._tabelaLivros, queryOptions);
       this.logService.info(
         '✅ Dados de livros recuperados',
         {
