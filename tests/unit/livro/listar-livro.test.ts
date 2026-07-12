@@ -124,6 +124,38 @@ describe('ListarLivroUseCase', () => {
     expect(result.PreviousPage).toBe('?page=1&limit=5&sortBy=titulo&sortOrder=desc');
   });
 
+  it('deve mapear sort[campo] e filter[campo] para sortBy/sortOrder e filterKey/filterValue', async () => {
+    const mockResult: ResultType = {
+      data: [livroMockData],
+      limit: 20,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+    repoMock.getAll.mockResolvedValueOnce(mockResult);
+
+    const useCase = new ListarLivroUseCase(repoMock);
+    const event = createEvent({
+      page: '1',
+      limit: '20',
+      'sort[titulo]': 'asc',
+      'filter[titulo]': 'casa',
+    });
+
+    await useCase.execute(event, '12345');
+
+    expect(repoMock.getAll).toHaveBeenCalledWith('Livros', {
+      page: 1,
+      limit: 20,
+      sortBy: 'titulo',
+      sortOrder: 'asc',
+      filterKey: 'titulo',
+      filterValue: 'casa',
+    });
+  });
+
   it('deve gerar links de next/prev omitindo sortBy e sortOrder caso sejam ignorados', async () => {
     const mockResult: ResultType = {
       data: [livroMockData],
