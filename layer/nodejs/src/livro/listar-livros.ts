@@ -9,6 +9,7 @@ import {
   PageDataType,
   LogService,
   LivroInvalidoError,
+  AutorDTO,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -16,10 +17,12 @@ import { createResult } from '../util';
 
 export class ListarLivroUseCase implements UseCaseInterface {
   private _tabelaLivros: string;
+  private _tabelaAutores: string;
   private logService = new LogService('ListarLivroUseCase');
 
   constructor(private _repository: RepositoryInterface) {
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
+    this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
   }
 
   async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
@@ -47,9 +50,10 @@ export class ListarLivroUseCase implements UseCaseInterface {
       const sortBy =
         queryParams.sortBy || (sortEntry ? sortEntry[0].slice('sort['.length, -1) : '') || 'titulo';
       const sortOrder = queryParams.sortOrder || sortEntry?.[1] || 'asc';
-      const filterKey =
+      let filterKey =
         queryParams.filterKey || (filterEntry ? filterEntry[0].slice('filter['.length, -1) : '');
-      const filterValue = queryParams.filterValue || filterEntry?.[1] || queryParams.filter || '';
+      let filterValue: string | string[] =
+        queryParams.filterValue || filterEntry?.[1] || queryParams.filter || '';
       this.logService.info(
         '🔍 Informações para buscar livros definidas.',
         { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
@@ -62,6 +66,27 @@ export class ListarLivroUseCase implements UseCaseInterface {
           filterValue,
         }
       );
+
+      if (filterKey && filterKey.toLowerCase() === 'autor') {
+        // Para obter todos os autores que contenham no nome o valor do filtro, e então buscar os livros desses autores
+        const autoresResult = await this._repository.getAll(this._tabelaAutores, {
+          page: 1,
+          limit: 1000,
+          filterKey,
+          filterValue,
+        });
+        const autoresIds: string[] = autoresResult?.data.map((autor: AutorDTO) => autor.id);
+        if (autoresIds && autoresIds.length > 0) {
+          filterKey = 'autorId';
+          filterValue = autoresIds;
+        } else {
+          return createResult([], 204, 'Nenhum livro encontrado para o nome de autor informado.', {
+            page,
+            totalItems: 0,
+            totalPages: 0,
+          });
+        }
+      }
 
       const queryOptions = {
         page,
