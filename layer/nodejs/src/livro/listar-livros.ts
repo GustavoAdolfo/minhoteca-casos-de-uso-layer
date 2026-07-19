@@ -72,7 +72,7 @@ export class ListarLivroUseCase implements UseCaseInterface {
         const autoresResult = await this._repository.getAll(this._tabelaAutores, {
           page: 1,
           limit: 1000,
-          filterKey,
+          filterKey: 'nome',
           filterValue,
         });
         const autoresIds: string[] = autoresResult?.data.map((autor: AutorDTO) => autor.id);
