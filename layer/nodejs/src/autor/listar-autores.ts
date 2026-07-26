@@ -88,6 +88,10 @@ export class ListarAutorUseCase implements UseCaseInterface {
         }
       }
 
+      if (filterKey && filterKey.toLowerCase() === 'totallivros') {
+        filterValue = parseInt(filterValue as string, 10);
+      }
+
       const queryOptions = {
         page,
         limit,
