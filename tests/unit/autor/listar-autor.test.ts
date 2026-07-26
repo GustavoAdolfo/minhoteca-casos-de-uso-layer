@@ -145,6 +145,55 @@ describe('ListarAutorUseCase', () => {
     });
   });
 
+  it('deve mapear filtro por pais para paisId quando houver países correspondentes', async () => {
+    repoMock.getAll
+      .mockResolvedValueOnce({
+        data: [{ isoNumeric: 76 }, { isoNumeric: 620 }],
+      } as ResultType)
+      .mockResolvedValueOnce({
+        data: [autorMockData],
+        limit: 10,
+        currentPage: 1,
+        totalPages: 1,
+        totalDocuments: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } as ResultType);
+
+    const useCase = new ListarAutorUseCase(repoMock);
+    await useCase.execute(createEvent({ filterKey: 'pais', filterValue: 'bra' }), '1234567890');
+
+    expect(repoMock.getAll).toHaveBeenNthCalledWith(1, 'Paises', {
+      page: 1,
+      limit: 1000,
+      filterKey: 'nomePortugues',
+      filterValue: 'bra',
+    });
+    expect(repoMock.getAll).toHaveBeenNthCalledWith(2, 'Autores', {
+      page: 1,
+      limit: 10,
+      sortBy: 'nome',
+      sortOrder: 'asc',
+      filterKey: 'paisId',
+      filterValue: [76, 620],
+    });
+  });
+
+  it('deve retornar 204 ao filtrar por pais quando nenhum país for encontrado', async () => {
+    repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
+
+    const useCase = new ListarAutorUseCase(repoMock);
+    const result = await useCase.execute(
+      createEvent({ filterKey: 'pais', filterValue: 'nao-existe' }),
+      '1234567890'
+    );
+
+    expect(repoMock.getAll).toHaveBeenCalledTimes(1);
+    expect(result.Code).toBe(204);
+    expect(result.Message).toBe('Nenhum país encontrado com o nome informado.');
+    expect(result.PageData).toEqual([]);
+  });
+
   it('deve gerar links de next/prev omitindo sortBy e sortOrder caso sejam ignorados', async () => {
     const mockResult: ResultType = {
       data: [autorMockData],
