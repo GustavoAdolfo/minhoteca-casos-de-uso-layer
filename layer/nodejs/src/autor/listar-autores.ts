@@ -77,7 +77,7 @@ export class ListarAutorUseCase implements UseCaseInterface {
         });
         const paisesId: number[] = paisesResult?.data.map((pais: PaisDTO) => pais.isoNumeric);
         if (paisesId && paisesId.length > 0) {
-          filterKey = 'paisId';
+          filterKey = 'idPais';
           filterValue = paisesId;
         } else {
           return createResult([], 204, 'Nenhum país encontrado com o nome informado.', {
