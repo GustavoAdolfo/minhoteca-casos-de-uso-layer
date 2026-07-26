@@ -156,6 +156,82 @@ describe('ListarLivroUseCase', () => {
     });
   });
 
+  it('deve mapear filtro por autor para autorId e preencher dados de autor no livro', async () => {
+    const livroComMesmoAutor = { ...livroMockData, id: 'id-2' };
+
+    repoMock.getAll
+      .mockResolvedValueOnce({
+        data: [{ id: livroMockData.autorId }],
+      } as ResultType)
+      .mockResolvedValueOnce({
+        data: [livroMockData, livroComMesmoAutor],
+        limit: 10,
+        currentPage: 1,
+        totalPages: 1,
+        totalDocuments: 2,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } as ResultType);
+
+    repoMock.getListByMinhotecaIds.mockResolvedValueOnce({
+      data: [
+        {
+          id: livroMockData.autorId,
+          nome: 'Autor de Teste',
+          email: 'autor@teste.com',
+          website: 'https://autor.teste',
+          paisId: 76,
+        },
+      ],
+    } as ResultType);
+
+    const useCase = new ListarLivroUseCase(repoMock);
+    const result = await useCase.execute(
+      createEvent({ filterKey: 'autor', filterValue: 'Autor de Teste' }),
+      '12345'
+    );
+
+    expect(repoMock.getAll).toHaveBeenNthCalledWith(1, 'Autores', {
+      page: 1,
+      limit: 1000,
+      filterKey: 'nome',
+      filterValue: 'Autor de Teste',
+    });
+    expect(repoMock.getAll).toHaveBeenNthCalledWith(2, 'Livros', {
+      page: 1,
+      limit: 10,
+      sortBy: 'titulo',
+      sortOrder: 'asc',
+      filterKey: 'autorId',
+      filterValue: [livroMockData.autorId],
+    });
+    expect(repoMock.getListByMinhotecaIds).toHaveBeenCalledWith('Autores', [livroMockData.autorId]);
+    expect(result.Code).toBe(200);
+    expect(result.PageData).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          autorId: livroMockData.autorId,
+          autor: expect.objectContaining({ id: livroMockData.autorId, nome: 'Autor de Teste' }),
+        }),
+      ])
+    );
+  });
+
+  it('deve retornar 204 ao filtrar por autor quando nenhum autor for encontrado', async () => {
+    repoMock.getAll.mockResolvedValueOnce({ data: [] } as ResultType);
+
+    const useCase = new ListarLivroUseCase(repoMock);
+    const result = await useCase.execute(
+      createEvent({ filterKey: 'autor', filterValue: 'Autor Inexistente' }),
+      '12345'
+    );
+
+    expect(repoMock.getAll).toHaveBeenCalledTimes(1);
+    expect(result.Code).toBe(204);
+    expect(result.Message).toBe('Nenhum livro encontrado para o nome de autor informado.');
+    expect(result.PageData).toEqual([]);
+  });
+
   it('deve gerar links de next/prev omitindo sortBy e sortOrder caso sejam ignorados', async () => {
     const mockResult: ResultType = {
       data: [livroMockData],
