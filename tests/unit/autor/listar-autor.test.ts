@@ -174,7 +174,7 @@ describe('ListarAutorUseCase', () => {
       limit: 10,
       sortBy: 'nome',
       sortOrder: 'asc',
-      filterKey: 'paisId',
+      filterKey: 'idPais',
       filterValue: [76, 620],
     });
   });
