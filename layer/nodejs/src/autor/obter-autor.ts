@@ -127,22 +127,25 @@ export class ObterAutorUseCase implements UseCaseInterface {
             limit: 1000,
           });
           if (pais?.data?.length > 0) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const paisEntities = (pais.data as any[]).map(
-              (paisData) => Object.getOwnPropertyDescriptor(paisData, 'id')?.value
-            );
             this.logService.info(
-              `Dados de paises recuperados = ${paisEntities.length > 0}`,
+              'Dados de paises recuperados',
               {
                 label: 'ObterAutorUseCase',
                 autorId,
-                paisId: paisEntities.join(', '),
+                paisId: autor.idPais,
                 ...(idExecucao && { logId: idExecucao }),
               },
               { pais }
             );
-            const paisDTO = PaisAdapter.toDTO(paisEntities[0]);
+            const paisDTO = PaisAdapter.toDTO(pais.data[0]);
             autor.pais = paisDTO as PaisDTO;
+          } else {
+            this.logService.warn('Nenhum dado de país encontrado para o autor.', {
+              label: 'ObterAutorUseCase',
+              autorId,
+              idPais: autor.idPais,
+              ...(idExecucao && { logId: idExecucao }),
+            });
           }
 
           return createResult([autor], 200, 'Autor obtido com sucesso.');
