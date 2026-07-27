@@ -10,6 +10,8 @@ import {
   LogService,
   LivroDTO,
   AutorInvalidoError,
+  PaisAdapter,
+  PaisDTO,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
@@ -18,11 +20,13 @@ import { createResult } from '../util';
 export class ObterAutorUseCase implements UseCaseInterface {
   private _tabelaAutores: string;
   private _tabelaLivros: string;
+  private _tabelaPaises: string;
   private logService = new LogService('ObterAutorUseCase');
 
   constructor(private _repository: RepositoryInterface) {
     this._tabelaAutores = process.env.TABELA_AUTORES ?? 'Autores';
     this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
+    this._tabelaPaises = process.env.TABELA_PAISES ?? 'Paises';
   }
 
   async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
@@ -109,6 +113,30 @@ export class ObterAutorUseCase implements UseCaseInterface {
               },
               { autor }
             );
+          }
+
+          const pais = await this._repository.getAll(this._tabelaPaises, {
+            filterKey: 'idPais',
+            filterValue: autor.idPais,
+            limit: 1000,
+          });
+          if (pais?.data?.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const paisEntities = (pais.data as any[]).map(
+              (paisData) => Object.getOwnPropertyDescriptor(paisData, 'id')?.value
+            );
+            this.logService.info(
+              `Dados de paises recuperados = ${paisEntities.length > 0}`,
+              {
+                label: 'ObterAutorUseCase',
+                autorId,
+                paisId: paisEntities.join(', '),
+                ...(idExecucao && { logId: idExecucao }),
+              },
+              { autor }
+            );
+            const paisDTO = PaisAdapter.toDTO(paisEntities[0]);
+            autor.pais = paisDTO as PaisDTO;
           }
 
           return createResult([autor], 200, 'Autor obtido com sucesso.');
