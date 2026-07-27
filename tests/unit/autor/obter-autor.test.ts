@@ -273,7 +273,16 @@ describe('ObterAutorUseCase', () => {
 
   it('deve preencher o país do autor quando houver registro correspondente na tabela de Paises', async () => {
     const mockPais: ResultType = {
-      data: [{ id: 'pais-1', nome: 'Brasil', isoNumeric: '076' }],
+      data: [
+        {
+          isoNumeric: 76,
+          nome: 'Brasil',
+          nomePortugues: 'Brasil',
+          bandeira: 'data:image/png;base64,...',
+          isoAlpha3: 'BRA',
+          isoAlpha2: 'BR',
+        },
+      ],
       limit: 1000,
       currentPage: 1,
       totalPages: 1,
@@ -300,7 +309,7 @@ describe('ObterAutorUseCase', () => {
     expect(result.Code).toBe(200);
     expect(result.PageData?.[0]).toEqual(
       expect.objectContaining({
-        pais: expect.objectContaining({ id: 'pais-1' }),
+        pais: expect.objectContaining({ nome: 'Brasil', isoNumeric: 76 }),
       })
     );
   });

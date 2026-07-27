@@ -1,12 +1,14 @@
 import {
   Autor,
   Livro,
+  Pais,
   PageDataType,
   AutorAdapter,
   LivroAdapter,
   UseCaseInterface,
   AutorInterface,
   LivroInterface,
+  PaisInterface,
   LogService,
   LivroDTO,
   AutorInvalidoError,
@@ -137,7 +139,8 @@ export class ObterAutorUseCase implements UseCaseInterface {
               },
               { pais }
             );
-            const paisDTO = PaisAdapter.toDTO(pais.data[0]);
+            const paisEntity = Pais.create(pais.data[0] as PaisInterface);
+            const paisDTO = PaisAdapter.toDTO(paisEntity);
             autor.pais = paisDTO as PaisDTO;
           } else {
             this.logService.warn('Nenhum dado de país encontrado para o autor.', {
