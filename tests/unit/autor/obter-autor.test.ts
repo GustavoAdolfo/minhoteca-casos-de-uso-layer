@@ -24,6 +24,23 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
         }))
       ),
     },
+    PaisAdapter: {
+      toDTO: jest.fn((pais) => {
+        if (typeof pais === 'object' && pais !== null) {
+          return {
+            id: pais.id,
+            nome: pais.nome,
+            isoNumeric: pais.isoNumeric,
+          };
+        }
+
+        return {
+          id: pais,
+          nome: undefined,
+          isoNumeric: undefined,
+        };
+      }),
+    },
   };
 });
 
@@ -36,6 +53,7 @@ describe('ObterAutorUseCase', () => {
     email: 'autor-mock@email.net',
     website: 'http://autor-mock-website.com',
     pais: 'BRA',
+    idPais: '076',
   };
 
   beforeEach(() => {
@@ -65,8 +83,7 @@ describe('ObterAutorUseCase', () => {
 
   const getLogServiceErrorMock = (): jest.Mock => {
     const logServiceInstance = (LogService as unknown as jest.Mock).mock.results.at(-1)?.value as
-      | { error: jest.Mock }
-      | undefined;
+      { error: jest.Mock } | undefined;
 
     if (!logServiceInstance) {
       throw new Error('LogService mock não foi inicializado.');
@@ -252,5 +269,39 @@ describe('ObterAutorUseCase', () => {
     expect(result.PageData?.[0]).toHaveProperty('nome', 'autor-mock-name');
     // Verifica que livros é undefined quando não há registros
     expect((result.PageData?.[0] as unknown as AutorDTO).livros).toBeUndefined();
+  });
+
+  it('deve preencher o país do autor quando houver registro correspondente na tabela de Paises', async () => {
+    const mockPais: ResultType = {
+      data: [{ id: 'pais-1', nome: 'Brasil', isoNumeric: '076' }],
+      limit: 1000,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+
+    repoMock.findByMinhotecaId.mockResolvedValueOnce({ data: autorMockData } as ResultType);
+    repoMock.getAll
+      .mockResolvedValueOnce({ data: [] } as ResultType)
+      .mockResolvedValueOnce(mockPais);
+
+    const useCase = new ObterAutorUseCase(repoMock);
+    const event = createEvent({ id: '1234567890' });
+
+    const result = await useCase.execute(event, 'execucao-123');
+
+    expect(repoMock.getAll).toHaveBeenCalledWith('Paises', {
+      filterKey: 'isoNumeric',
+      filterValue: autorMockData.idPais,
+      limit: 1000,
+    });
+    expect(result.Code).toBe(200);
+    expect(result.PageData?.[0]).toEqual(
+      expect.objectContaining({
+        pais: expect.objectContaining({ id: 'pais-1' }),
+      })
+    );
   });
 });
