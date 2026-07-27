@@ -116,7 +116,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
           }
 
           const pais = await this._repository.getAll(this._tabelaPaises, {
-            filterKey: 'idPais',
+            filterKey: 'isoNumeric',
             filterValue: autor.idPais,
             limit: 1000,
           });
