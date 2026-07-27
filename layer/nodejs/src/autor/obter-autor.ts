@@ -115,6 +115,12 @@ export class ObterAutorUseCase implements UseCaseInterface {
             );
           }
 
+          this.logService.info('Buscando dados de paises associados ao autor', {
+            label: 'ObterAutorUseCase',
+            autorId,
+            idPais: autor.idPais,
+            ...(idExecucao && { logId: idExecucao }),
+          });
           const pais = await this._repository.getAll(this._tabelaPaises, {
             filterKey: 'isoNumeric',
             filterValue: autor.idPais,
@@ -133,7 +139,7 @@ export class ObterAutorUseCase implements UseCaseInterface {
                 paisId: paisEntities.join(', '),
                 ...(idExecucao && { logId: idExecucao }),
               },
-              { autor }
+              { pais }
             );
             const paisDTO = PaisAdapter.toDTO(paisEntities[0]);
             autor.pais = paisDTO as PaisDTO;
