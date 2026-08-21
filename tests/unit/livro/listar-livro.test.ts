@@ -193,7 +193,7 @@ describe('ListarLivroUseCase', () => {
 
     expect(repoMock.getAll).toHaveBeenNthCalledWith(1, 'Autores', {
       page: 1,
-      limit: 1000,
+      limit: 10000,
       filterKey: 'nome',
       filterValue: 'Autor de Teste',
     });
@@ -215,6 +215,71 @@ describe('ListarLivroUseCase', () => {
         }),
       ])
     );
+  });
+
+  it('deve ordenar livros por nome do autor e respeitar a paginação', async () => {
+    const livroAutorCarlos = {
+      ...livroMockData,
+      id: 'livro-carlos',
+      titulo: 'Livro do Carlos',
+      autorId: 'autor-carlos',
+    };
+    const livroAutorAna = {
+      ...livroMockData,
+      id: 'livro-ana',
+      titulo: 'Livro da Ana',
+      autorId: 'autor-ana',
+    };
+    const livroAutorBruno = {
+      ...livroMockData,
+      id: 'livro-bruno',
+      titulo: 'Livro do Bruno',
+      autorId: 'autor-bruno',
+    };
+
+    repoMock.getAll
+      .mockResolvedValueOnce({
+        data: [
+          { id: 'autor-carlos', nome: 'Carlos' },
+          { id: 'autor-ana', nome: 'Ana' },
+          { id: 'autor-bruno', nome: 'Bruno' },
+        ],
+      } as ResultType)
+      .mockResolvedValueOnce({
+        data: [livroAutorCarlos, livroAutorAna, livroAutorBruno],
+        limit: 10000,
+        currentPage: 1,
+        totalPages: 1,
+        totalDocuments: 3,
+        hasNextPage: false,
+        hasPrevPage: false,
+      } as ResultType);
+
+    repoMock.getListByMinhotecaIds.mockResolvedValueOnce({
+      data: [
+        { id: 'autor-carlos', nome: 'Carlos' },
+        { id: 'autor-ana', nome: 'Ana' },
+        { id: 'autor-bruno', nome: 'Bruno' },
+      ],
+    } as ResultType);
+
+    const useCase = new ListarLivroUseCase(repoMock);
+    const result = await useCase.execute(
+      createEvent({ page: '2', limit: '1', sortBy: 'autor', sortOrder: 'asc' }),
+      '12345'
+    );
+
+    expect(result.Code).toBe(200);
+    expect(result.PageData).toHaveLength(1);
+    expect(result.PageData![0]).toEqual(
+      expect.objectContaining({
+        id: 'livro-bruno',
+        autor: expect.objectContaining({ nome: 'Bruno' }),
+      })
+    );
+    expect(result.TotalItems).toBe(3);
+    expect(result.TotalPage).toBe(3);
+    expect(result.Page).toBe(2);
   });
 
   it('deve retornar 204 ao filtrar por autor quando nenhum autor for encontrado', async () => {
