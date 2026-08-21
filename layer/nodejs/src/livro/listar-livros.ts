@@ -71,7 +71,7 @@ export class ListarLivroUseCase implements UseCaseInterface {
         // Para obter todos os autores que contenham no nome o valor do filtro, e então buscar os livros desses autores
         const autoresResult = await this._repository.getAll(this._tabelaAutores, {
           page: 1,
-          limit: 1000,
+          limit: 10000,
           filterKey: 'nome',
           filterValue,
         });
@@ -96,7 +96,75 @@ export class ListarLivroUseCase implements UseCaseInterface {
         ...(filterKey && filterValue && { filterKey, filterValue }),
       };
 
-      const result: ResultType = await this._repository.getAll(this._tabelaLivros, queryOptions);
+      let result: ResultType;
+      if (sortBy.toLowerCase() === 'autor') {
+        this.logService.info(
+          '🔤 Ordenação por autor solicitada. Recuperando autores e livros para ordenar em memória.',
+          { label: 'ListarLivroUseCase', ...(idExecucao && { logId: idExecucao }) },
+          { page, limit, sortOrder, filterKey, filterValue }
+        );
+
+        const autoresResult: ResultType = await this._repository.getAll(this._tabelaAutores, {
+          page: 1,
+          limit: 10000,
+        });
+        const autoresMap = new Map<string, string>();
+        (Array.isArray(autoresResult?.data) ? autoresResult.data : []).forEach(
+          (autor: AutorDTO) => {
+            if (autor?.id) {
+              autoresMap.set(String(autor.id), autor.nome ?? '');
+            }
+          }
+        );
+
+        const livrosResult: ResultType = await this._repository.getAll(this._tabelaLivros, {
+          page: 1,
+          limit: 10000,
+          ...(filterKey && filterValue && { filterKey, filterValue }),
+        });
+
+        const livrosOrdenados = [
+          ...(Array.isArray(livrosResult?.data) ? livrosResult.data : []),
+        ].sort((livroA: LivroInterface, livroB: LivroInterface) => {
+          const nomeAutorA =
+            autoresMap.get(
+              String((livroA as LivroInterface & { autorId?: string }).autorId ?? '')
+            ) ?? '';
+          const nomeAutorB =
+            autoresMap.get(
+              String((livroB as LivroInterface & { autorId?: string }).autorId ?? '')
+            ) ?? '';
+          const comparacao = nomeAutorA.localeCompare(nomeAutorB, 'pt-BR', { sensitivity: 'base' });
+
+          if (comparacao !== 0) {
+            return sortOrder.toLowerCase() === 'desc' ? comparacao * -1 : comparacao;
+          }
+
+          const tituloA = String((livroA as LivroInterface & { titulo?: string }).titulo ?? '');
+          const tituloB = String((livroB as LivroInterface & { titulo?: string }).titulo ?? '');
+          const comparacaoTitulo = tituloA.localeCompare(tituloB, 'pt-BR', { sensitivity: 'base' });
+          return sortOrder.toLowerCase() === 'desc' ? comparacaoTitulo * -1 : comparacaoTitulo;
+        });
+
+        const totalDocuments = livrosOrdenados.length;
+        const totalPages = totalDocuments === 0 ? 0 : Math.ceil(totalDocuments / limit) || 1;
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+
+        result = {
+          ...livrosResult,
+          data: livrosOrdenados.slice(startIndex, endIndex),
+          totalDocuments,
+          totalPages,
+          currentPage: page,
+          limit,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        } as ResultType;
+      } else {
+        result = await this._repository.getAll(this._tabelaLivros, queryOptions);
+      }
+
       this.logService.info(
         '✅ Dados de livros recuperados',
         {
