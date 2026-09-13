@@ -1,13 +1,14 @@
 import {
   AutorDTO,
   EditoraDTO,
+  EmprestimoDTO,
   LivroDTO,
   PageDataType,
   PaisDTO,
 } from '@gustavoadolfo/minhoteca-core-layer';
 
 export const createResult = (
-  data: LivroDTO[] | PaisDTO[] | AutorDTO[] | EditoraDTO[] | undefined,
+  data: LivroDTO[] | PaisDTO[] | AutorDTO[] | EditoraDTO[] | EmprestimoDTO[] | undefined,
   code: number,
   message?: string,
   params?: {

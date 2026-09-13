@@ -38,7 +38,7 @@ describe('AlterarAutorUseCase', () => {
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
       getListByMinhotecaIds: jest.fn(),
-    } as jest.Mocked<RepositoryInterface>;
+    } as unknown as jest.Mocked<RepositoryInterface>;
   });
 
   const createEvent = (body: Record<string, unknown> | null): APIGatewayEvent =>
