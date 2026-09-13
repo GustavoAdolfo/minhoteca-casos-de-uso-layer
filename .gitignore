@@ -146,3 +146,4 @@ vite.config.ts.timestamp-*
 .npmrc
 .vscode/settings.json
 .vscode/launch.json
+terraform/envs/local/

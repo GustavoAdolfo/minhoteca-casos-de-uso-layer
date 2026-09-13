@@ -53,7 +53,7 @@ describe('CriarEditoraUseCase', () => {
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
       getListByMinhotecaIds: jest.fn(),
-    } as jest.Mocked<RepositoryInterface>;
+    } as unknown as jest.Mocked<RepositoryInterface>;
 
     dynamoRepoMock = {
       saveData: jest.fn(),
@@ -65,7 +65,7 @@ describe('CriarEditoraUseCase', () => {
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
       getListByMinhotecaIds: jest.fn(),
-    } as jest.Mocked<RepositoryInterface>;
+    } as unknown as jest.Mocked<RepositoryInterface>;
 
     // // Mock dos retornos do Adapter utilizando a entidade Editora da biblioteca core
     // const mockEntity = Editora.create(
