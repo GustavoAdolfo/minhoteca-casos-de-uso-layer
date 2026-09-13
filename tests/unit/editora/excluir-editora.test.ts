@@ -42,7 +42,7 @@ describe('ExcluirEditoraUseCase', () => {
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
       getListByMinhotecaIds: jest.fn(),
-    } as jest.Mocked<RepositoryInterface>;
+    } as unknown as jest.Mocked<RepositoryInterface>;
   });
 
   // Função utilitária para facilitar a criação de eventos
@@ -55,8 +55,7 @@ describe('ExcluirEditoraUseCase', () => {
 
   const getLogServiceErrorMock = (): jest.Mock => {
     const logServiceInstance = (LogService as unknown as jest.Mock).mock.results.at(-1)?.value as
-      | { error: jest.Mock }
-      | undefined;
+      { error: jest.Mock } | undefined;
 
     if (!logServiceInstance) {
       throw new Error('LogService mock não foi inicializado.');
