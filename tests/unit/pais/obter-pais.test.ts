@@ -41,7 +41,7 @@ describe('ObterPaisUseCase', () => {
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
       getListByMinhotecaIds: jest.fn(),
-    } as jest.Mocked<RepositoryInterface>;
+    } as unknown as jest.Mocked<RepositoryInterface>;
   });
 
   const createEvent = (

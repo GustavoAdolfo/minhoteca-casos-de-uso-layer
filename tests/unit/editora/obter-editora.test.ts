@@ -73,7 +73,7 @@ describe('ObterEditoraUseCase', () => {
       removeData: jest.fn(),
       findByMinhotecaId: jest.fn(),
       getListByMinhotecaIds: jest.fn(),
-    } as jest.Mocked<RepositoryInterface>;
+    } as unknown as jest.Mocked<RepositoryInterface>;
   });
 
   const createEvent = (
@@ -87,8 +87,7 @@ describe('ObterEditoraUseCase', () => {
 
   const getLogServiceErrorMock = (): jest.Mock => {
     const logServiceInstance = (LogService as unknown as jest.Mock).mock.results.at(-1)?.value as
-      | { error: jest.Mock }
-      | undefined;
+      { error: jest.Mock } | undefined;
 
     if (!logServiceInstance) {
       throw new Error('LogService mock não foi inicializado.');
@@ -99,8 +98,7 @@ describe('ObterEditoraUseCase', () => {
 
   const getLogServiceWarnMock = (): jest.Mock => {
     const logServiceInstance = (LogService as unknown as jest.Mock).mock.results.at(-1)?.value as
-      | { warn: jest.Mock }
-      | undefined;
+      { warn: jest.Mock } | undefined;
 
     if (!logServiceInstance) {
       throw new Error('LogService mock não foi inicializado.');
