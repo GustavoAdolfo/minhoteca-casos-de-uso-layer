@@ -64,7 +64,7 @@
     "@commitlint/config-conventional": "^21.0.1",
     "@gustavoadolfo/minhoteca-adapter-layer": "^0.1.44",
     "@gustavoadolfo/minhoteca-core-layer": "^1.0.58",
-    "@types/aws-lambda": "^8.10.162",
+    "@types/aws-lambda": "^8.10.163",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.5.1",
     "@typescript-eslint/eslint-plugin": "^8.65.0",
@@ -74,12 +74,12 @@
     "dotenv": "^17.4.2",
     "eslint": "^10.6.0",
     "husky": "^9.1.7",
-    "jest": "^30.4.2",
-    "lint-staged": "^17.3.0",
-    "mongodb": "^7.5.0",
+    "jest": "^30.5.1",
+    "lint-staged": "^17.5.1",
+    "mongodb": "^7.6.0",
     "prettier": "^3.9.5",
     "ts-jest": "^29.4.9",
-    "tsc-alias": "^1.9.1",
+    "tsc-alias": "^1.9.5",
     "typescript": "^6.0.3"
   }
 }
