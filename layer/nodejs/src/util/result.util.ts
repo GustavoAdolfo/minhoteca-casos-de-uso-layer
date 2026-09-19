@@ -18,7 +18,7 @@ export const createResult = <T extends LivroDTO | PaisDTO | AutorDTO | EditoraDT
     nextPage?: string;
     prevPage?: string;
   }
-): PageDataType<T[]> => {
+): PageDataType => {
   return {
     PageData: data,
     Items: data?.length ?? 0,
