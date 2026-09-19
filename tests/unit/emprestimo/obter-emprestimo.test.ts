@@ -17,6 +17,7 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('ObterEmprestimoUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
+  let livroRepoMock: jest.Mocked<RepositoryInterface>;
 
   const createEvent = (
     queryStringParameters: Record<string, string> | null = null
@@ -24,6 +25,16 @@ describe('ObterEmprestimoUseCase', () => {
     ({
       queryStringParameters,
     }) as unknown as APIGatewayEvent;
+
+  const createResult = (data: unknown): ResultType => ({
+    data,
+    currentPage: 1,
+    totalPages: 1,
+    totalDocuments: Array.isArray(data) ? data.length : 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+    limit: 10,
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -40,6 +51,11 @@ describe('ObterEmprestimoUseCase', () => {
       getListByMinhotecaIds: jest.fn(),
       getCountFromTable: jest.fn(),
     } as unknown as jest.Mocked<RepositoryInterface>;
+
+    livroRepoMock = {
+      ...repoMock,
+      findByMinhotecaId: jest.fn(),
+    } as unknown as jest.Mocked<RepositoryInterface>;
   });
 
   const getLogServiceErrorMock = (): jest.Mock => {
@@ -54,22 +70,16 @@ describe('ObterEmprestimoUseCase', () => {
   };
 
   it('deve obter o empréstimo pelo usuarioId e retornar os dados corretamente', async () => {
-    const mockResult: ResultType = {
-      data: {
-        usuarioId: 'usuario-123',
-        livroId: 'livro-456',
-        situacao: 'ATIVO',
-        solicitacaoDataHora: '2026-09-13T08:00:00.000Z',
-      },
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-      limit: 10,
-    };
-
-    repoMock.getData.mockResolvedValueOnce(mockResult);
+    repoMock.getData.mockResolvedValueOnce(
+      createResult([
+        {
+          usuarioId: 'usuario-123',
+          livroId: 'livro-456',
+          situacao: 'ATIVO',
+          solicitacaoDataHora: '2026-09-13T08:00:00.000Z',
+        },
+      ])
+    );
 
     const useCase = new ObterEmprestimoUseCase(repoMock);
     const event = createEvent({ usuarioId: 'usuario-123' });
@@ -92,25 +102,28 @@ describe('ObterEmprestimoUseCase', () => {
     ]);
   });
 
-  it('deve obter o empréstimo pelo livroId e sobrescrever o resultado quando informado', async () => {
-    const mockResult: ResultType = {
-      data: {
-        usuarioId: 'usuario-999',
-        livroId: 'livro-456',
-        situacao: 'PENDENTE',
-        solicitacaoDataHora: '2026-09-13T09:00:00.000Z',
-      },
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-      limit: 10,
-    };
+  it('deve obter o empréstimo pelo livroId e enriquecer o resultado com os dados do livro', async () => {
+    repoMock.getData.mockResolvedValueOnce(
+      createResult([
+        {
+          usuarioId: 'usuario-999',
+          livroId: 'livro-456',
+          situacao: 'PENDENTE',
+          solicitacaoDataHora: '2026-09-13T09:00:00.000Z',
+        },
+      ])
+    );
 
-    repoMock.getData.mockResolvedValueOnce(mockResult);
+    livroRepoMock.findByMinhotecaId.mockResolvedValueOnce(
+      createResult([
+        {
+          id: 'livro-456',
+          titulo: 'Livro 456',
+        },
+      ])
+    );
 
-    const useCase = new ObterEmprestimoUseCase(repoMock);
+    const useCase = new ObterEmprestimoUseCase(repoMock, livroRepoMock);
     const event = createEvent({ livroId: 'livro-456' });
 
     const result = await useCase.execute(event, 'execucao-456');
@@ -120,17 +133,22 @@ describe('ObterEmprestimoUseCase', () => {
       value: 'livro-456',
       type: 'S',
     });
+    expect(livroRepoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-456');
     expect(result.Code).toBe(200);
     expect(result.PageData).toEqual([
       expect.objectContaining({
         usuarioId: 'usuario-999',
         livroId: 'livro-456',
         situacao: 'PENDENTE',
+        livro: expect.objectContaining({
+          id: 'livro-456',
+          titulo: 'Livro 456',
+        }),
       }),
     ]);
   });
 
-  it('deve desempacotar o empréstimo quando o repositório retornar um array indexado', async () => {
+  it('deve desempacotar o empréstimo quando o repositório retornar um objeto indexado por 0', async () => {
     const emprestimo = {
       usuarioId: 'usuario-indexado',
       livroId: 'livro-indexado',
@@ -138,20 +156,12 @@ describe('ObterEmprestimoUseCase', () => {
       solicitacaoDataHora: 'sábado, 19/09/2026, 17:00:00 GMT-03:00',
     };
 
-    repoMock.getData.mockResolvedValueOnce({
-      data: [emprestimo],
-      currentPage: 1,
-      totalPages: 1,
-      totalDocuments: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-      limit: 10,
-    });
+    repoMock.getData.mockResolvedValueOnce(createResult({ 0: emprestimo }));
 
     const useCase = new ObterEmprestimoUseCase(repoMock);
     const result = await useCase.execute(createEvent({ usuarioId: 'usuario-indexado' }));
 
-    expect(result.PageData).toEqual([emprestimo]);
+    expect(result.PageData).toEqual([expect.objectContaining(emprestimo)]);
     expect(result.PageData?.[0]).not.toHaveProperty('0');
   });
 
@@ -163,34 +173,26 @@ describe('ObterEmprestimoUseCase', () => {
     process.env.TABELA_EMPRESTIMO_LIVROS = 'TabelaEmprestimoLivrosMock';
 
     try {
-      repoMock.getData.mockResolvedValueOnce({
-        data: {
-          usuarioId: 'usuario-env',
-          livroId: 'livro-env',
-          situacao: 'DEVOLVIDO',
-          solicitacaoDataHora: '2026-09-13T10:00:00.000Z',
-        },
-        currentPage: 1,
-        totalPages: 1,
-        totalDocuments: 1,
-        hasNextPage: false,
-        hasPrevPage: false,
-        limit: 10,
-      });
-      repoMock.getData.mockResolvedValueOnce({
-        data: {
-          usuarioId: 'usuario-env-2',
-          livroId: 'livro-env',
-          situacao: 'ATRASADO',
-          solicitacaoDataHora: '2026-09-13T11:00:00.000Z',
-        },
-        currentPage: 1,
-        totalPages: 1,
-        totalDocuments: 1,
-        hasNextPage: false,
-        hasPrevPage: false,
-        limit: 10,
-      });
+      repoMock.getData.mockResolvedValueOnce(
+        createResult([
+          {
+            usuarioId: 'usuario-env',
+            livroId: 'livro-env',
+            situacao: 'DEVOLVIDO',
+            solicitacaoDataHora: '2026-09-13T10:00:00.000Z',
+          },
+        ])
+      );
+      repoMock.getData.mockResolvedValueOnce(
+        createResult([
+          {
+            usuarioId: 'usuario-env-2',
+            livroId: 'livro-env',
+            situacao: 'ATRASADO',
+            solicitacaoDataHora: '2026-09-13T11:00:00.000Z',
+          },
+        ])
+      );
 
       const useCase = new ObterEmprestimoUseCase(repoMock);
       await useCase.execute(createEvent({ usuarioId: 'usuario-env', livroId: 'livro-env' }));
@@ -218,6 +220,14 @@ describe('ObterEmprestimoUseCase', () => {
         process.env.TABELA_EMPRESTIMO_LIVROS = originalLivro;
       }
     }
+  });
+
+  it('deve exigir ao menos um identificador para consultar o empréstimo', async () => {
+    const useCase = new ObterEmprestimoUseCase(repoMock);
+
+    await expect(useCase.execute(createEvent())).rejects.toThrow(
+      'Nenhum identificador de usuário ou livro fornecido.'
+    );
   });
 
   it('deve lançar erro quando o repositório falhar ao consultar o empréstimo', async () => {

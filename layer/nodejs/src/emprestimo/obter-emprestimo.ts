@@ -11,11 +11,16 @@ import { createResult } from '../util';
 export class ObterEmprestimoUseCase implements UseCaseInterface {
   private _tabelaEmprestimoUsuario: string;
   private _tabelaEmprestimoLivros: string;
+  private _tabelaLivros: string;
   private logService = new LogService('ObterEmprestimoUseCase');
 
-  constructor(private _repository: RepositoryInterface) {
+  constructor(
+    private _repository: RepositoryInterface,
+    private _livroRepository?: RepositoryInterface
+  ) {
     this._tabelaEmprestimoUsuario = process.env.TABELA_EMPRESTIMO_USUARIO ?? 'EmprestimoUsuario';
     this._tabelaEmprestimoLivros = process.env.TABELA_EMPRESTIMO_LIVROS ?? 'EmprestimoLivros';
+    this._tabelaLivros = process.env.TABELA_LIVROS ?? 'Livros';
   }
 
   async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
@@ -32,7 +37,11 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         { usuarioId, livroId }
       );
 
-      let resultEmprestimo: EmprestimoDTO = { usuarioId, livroId } as EmprestimoDTO;
+      if (!usuarioId && !livroId) {
+        throw new Error('Nenhum identificador de usuário ou livro fornecido.');
+      }
+
+      let resultEmprestimo: EmprestimoDTO[] = [];
 
       if (usuarioId) {
         const resultEmprestimoUsuario: ResultType = await this._repository.getData(
@@ -45,8 +54,25 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
           { resultEmprestimoUsuario }
         );
         const dataResult = this.normalizeEmprestimo(resultEmprestimoUsuario?.data);
-        if (dataResult && Object.keys(dataResult).length > 0) {
-          resultEmprestimo = this.stripInternalMethods(dataResult);
+        if (dataResult.length > 0) {
+          resultEmprestimo.push(...dataResult.map((item) => this.stripInternalMethods(item)));
+          if (resultEmprestimo.length > 0 && this._livroRepository) {
+            resultEmprestimo = await Promise.all(
+              resultEmprestimo.map(async (item) => {
+                const livro = await this._livroRepository?.findByMinhotecaId(
+                  this._tabelaLivros,
+                  item.livroId
+                );
+                const mappedItem = {
+                  ...item,
+                  livro: livro?.data?.[0] ?? null,
+                } as EmprestimoDTO;
+
+                mappedItem.toJSONString = () => JSON.stringify(mappedItem);
+                return mappedItem;
+              })
+            );
+          }
         }
       }
 
@@ -61,13 +87,25 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
           { resultEmprestimoLivro }
         );
         const dataResult = this.normalizeEmprestimo(resultEmprestimoLivro?.data);
-        if (dataResult && Object.keys(dataResult).length > 0) {
-          resultEmprestimo = this.stripInternalMethods(dataResult);
+        if (dataResult.length > 0) {
+          resultEmprestimo.push(...dataResult.map((item) => this.stripInternalMethods(item)));
+
+          const livro = await this._livroRepository?.findByMinhotecaId(this._tabelaLivros, livroId);
+          for (const item of resultEmprestimo) {
+            item.livro = livro?.data?.[0] ?? null;
+          }
         }
       }
 
-      return createResult([resultEmprestimo], 200, 'Empréstimo criado com sucesso');
+      return createResult(resultEmprestimo, 200, 'Empréstimo criado com sucesso');
     } catch (error) {
+      if (error instanceof Error) {
+        const message = error.message.trim();
+        if (message === 'Nenhum identificador de usuário ou livro fornecido.') {
+          throw error;
+        }
+      }
+
       this.logService.error(
         'Erro ao criar empréstimo:',
         { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
@@ -78,9 +116,9 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
     }
   }
 
-  private normalizeEmprestimo(data: unknown): EmprestimoDTO {
+  private normalizeEmprestimo(data: unknown): EmprestimoDTO[] {
     if (Array.isArray(data)) {
-      return this.normalizeEmprestimo(data[0]);
+      return data.flatMap((item) => this.normalizeEmprestimo(item));
     }
 
     if (data && typeof data === 'object') {
@@ -95,10 +133,10 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         Object.entries(record).filter(([key]) => key !== 'toJSONString' && key !== '0')
       );
 
-      return normalizedData as unknown as EmprestimoDTO;
+      return [normalizedData as unknown as EmprestimoDTO];
     }
 
-    return (data ?? {}) as EmprestimoDTO;
+    return data ? [data as EmprestimoDTO] : [];
   }
 
   private stripInternalMethods(data: EmprestimoDTO): EmprestimoDTO {
