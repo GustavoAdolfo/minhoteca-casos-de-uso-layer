@@ -48,7 +48,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
           { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
           { resultEmprestimoUsuario }
         );
-        const dataResult = (resultEmprestimoUsuario?.data ?? {}) as EmprestimoDTO;
+        const dataResult = this.normalizeEmprestimo(resultEmprestimoUsuario?.data);
         if (dataResult) {
           resultEmprestimo = {
             ...dataResult,
@@ -67,7 +67,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
           { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
           { resultEmprestimoLivro }
         );
-        const dataResult = (resultEmprestimoLivro?.data ?? {}) as EmprestimoDTO;
+        const dataResult = this.normalizeEmprestimo(resultEmprestimoLivro?.data);
         if (dataResult) {
           resultEmprestimo = {
             ...dataResult,
@@ -86,5 +86,17 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
       );
       throw new Error('Falha ao criar empréstimo.');
     }
+  }
+
+  private normalizeEmprestimo(data: unknown): EmprestimoDTO {
+    if (Array.isArray(data)) {
+      return this.normalizeEmprestimo(data[0]);
+    }
+
+    if (data && typeof data === 'object' && '0' in data) {
+      return this.normalizeEmprestimo((data as Record<string, unknown>)['0']);
+    }
+
+    return (data ?? {}) as EmprestimoDTO;
   }
 }
