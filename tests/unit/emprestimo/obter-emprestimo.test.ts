@@ -130,6 +130,31 @@ describe('ObterEmprestimoUseCase', () => {
     ]);
   });
 
+  it('deve desempacotar o empréstimo quando o repositório retornar um array indexado', async () => {
+    const emprestimo = {
+      usuarioId: 'usuario-indexado',
+      livroId: 'livro-indexado',
+      situacao: 'PENDENTE',
+      solicitacaoDataHora: 'sábado, 19/09/2026, 17:00:00 GMT-03:00',
+    };
+
+    repoMock.getData.mockResolvedValueOnce({
+      data: [{ 0: emprestimo }],
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+      limit: 10,
+    });
+
+    const useCase = new ObterEmprestimoUseCase(repoMock);
+    const result = await useCase.execute(createEvent({ usuarioId: 'usuario-indexado' }));
+
+    expect(result.PageData).toEqual([emprestimo]);
+    expect(result.PageData?.[0]).not.toHaveProperty('0');
+  });
+
   it('deve utilizar as tabelas configuradas nas variáveis de ambiente', async () => {
     const originalUsuario = process.env.TABELA_EMPRESTIMO_USUARIO;
     const originalLivro = process.env.TABELA_EMPRESTIMO_LIVROS;
