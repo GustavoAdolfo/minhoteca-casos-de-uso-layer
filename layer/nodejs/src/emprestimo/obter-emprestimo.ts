@@ -32,11 +32,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         { usuarioId, livroId }
       );
 
-      let resultEmprestimo: EmprestimoDTO = {
-        usuarioId,
-        livroId,
-        toJSONString: () => JSON.stringify({ usuarioId, livroId }),
-      } as EmprestimoDTO;
+      let resultEmprestimo: EmprestimoDTO = { usuarioId, livroId } as EmprestimoDTO;
 
       if (usuarioId) {
         const resultEmprestimoUsuario: ResultType = await this._repository.getData(
@@ -48,12 +44,9 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
           { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
           { resultEmprestimoUsuario }
         );
-        const dataResult = (resultEmprestimoUsuario?.data ?? {}) as EmprestimoDTO;
-        if (dataResult) {
-          resultEmprestimo = {
-            ...dataResult,
-            toJSONString: () => JSON.stringify(dataResult),
-          } as EmprestimoDTO;
+        const dataResult = this.normalizeEmprestimo(resultEmprestimoUsuario?.data);
+        if (dataResult && Object.keys(dataResult).length > 0) {
+          resultEmprestimo = this.stripInternalMethods(dataResult);
         }
       }
 
@@ -67,12 +60,9 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
           { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
           { resultEmprestimoLivro }
         );
-        const dataResult = (resultEmprestimoLivro?.data ?? {}) as EmprestimoDTO;
-        if (dataResult) {
-          resultEmprestimo = {
-            ...dataResult,
-            toJSONString: () => JSON.stringify(dataResult),
-          } as EmprestimoDTO;
+        const dataResult = this.normalizeEmprestimo(resultEmprestimoLivro?.data);
+        if (dataResult && Object.keys(dataResult).length > 0) {
+          resultEmprestimo = this.stripInternalMethods(dataResult);
         }
       }
 
@@ -86,5 +76,26 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
       );
       throw new Error('Falha ao criar empréstimo.');
     }
+  }
+
+  private normalizeEmprestimo(data: unknown): EmprestimoDTO {
+    if (Array.isArray(data)) {
+      return this.normalizeEmprestimo(data[0]);
+    }
+
+    if (data && typeof data === 'object' && '0' in data) {
+      return this.normalizeEmprestimo((data as Record<string, unknown>)['0']);
+    }
+
+    const normalizedData = (data ?? {}) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(normalizedData).filter(([key]) => key !== 'toJSONString')
+    ) as unknown as EmprestimoDTO;
+  }
+
+  private stripInternalMethods(data: EmprestimoDTO): EmprestimoDTO {
+    return Object.fromEntries(
+      Object.entries(data).filter(([key]) => key !== 'toJSONString')
+    ) as unknown as EmprestimoDTO;
   }
 }

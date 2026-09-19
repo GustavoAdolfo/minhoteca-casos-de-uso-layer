@@ -7,8 +7,8 @@ import {
   PaisDTO,
 } from '@gustavoadolfo/minhoteca-core-layer';
 
-export const createResult = (
-  data: LivroDTO[] | PaisDTO[] | AutorDTO[] | EditoraDTO[] | EmprestimoDTO[] | undefined,
+export const createResult = <T extends LivroDTO | PaisDTO | AutorDTO | EditoraDTO | EmprestimoDTO>(
+  data: T[] | undefined,
   code: number,
   message?: string,
   params?: {
