@@ -32,11 +32,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         { usuarioId, livroId }
       );
 
-      let resultEmprestimo: EmprestimoDTO = {
-        usuarioId,
-        livroId,
-        toJSONString: () => JSON.stringify({ usuarioId, livroId }),
-      } as EmprestimoDTO;
+      let resultEmprestimo: EmprestimoDTO = { usuarioId, livroId } as EmprestimoDTO;
 
       if (usuarioId) {
         const resultEmprestimoUsuario: ResultType = await this._repository.getData(
@@ -49,11 +45,8 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
           { resultEmprestimoUsuario }
         );
         const dataResult = this.normalizeEmprestimo(resultEmprestimoUsuario?.data);
-        if (dataResult) {
-          resultEmprestimo = {
-            ...dataResult,
-            toJSONString: () => JSON.stringify(dataResult),
-          } as EmprestimoDTO;
+        if (dataResult && Object.keys(dataResult).length > 0) {
+          resultEmprestimo = this.stripInternalMethods(dataResult);
         }
       }
 
@@ -68,11 +61,8 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
           { resultEmprestimoLivro }
         );
         const dataResult = this.normalizeEmprestimo(resultEmprestimoLivro?.data);
-        if (dataResult) {
-          resultEmprestimo = {
-            ...dataResult,
-            toJSONString: () => JSON.stringify(dataResult),
-          } as EmprestimoDTO;
+        if (dataResult && Object.keys(dataResult).length > 0) {
+          resultEmprestimo = this.stripInternalMethods(dataResult);
         }
       }
 
@@ -97,6 +87,15 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
       return this.normalizeEmprestimo((data as Record<string, unknown>)['0']);
     }
 
-    return (data ?? {}) as EmprestimoDTO;
+    const normalizedData = (data ?? {}) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(normalizedData).filter(([key]) => key !== 'toJSONString')
+    ) as unknown as EmprestimoDTO;
+  }
+
+  private stripInternalMethods(data: EmprestimoDTO): EmprestimoDTO {
+    return Object.fromEntries(
+      Object.entries(data).filter(([key]) => key !== 'toJSONString')
+    ) as unknown as EmprestimoDTO;
   }
 }
