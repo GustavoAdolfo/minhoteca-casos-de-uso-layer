@@ -66,7 +66,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         }
       }
 
-      return createResult([resultEmprestimo], 201, 'Empréstimo criado com sucesso');
+      return createResult([resultEmprestimo], 200, 'Empréstimo criado com sucesso');
     } catch (error) {
       this.logService.error(
         'Erro ao criar empréstimo:',
