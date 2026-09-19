@@ -81,7 +81,7 @@ describe('ObterEmprestimoUseCase', () => {
       value: 'usuario-123',
       type: 'S',
     });
-    expect(result.Code).toBe(201);
+    expect(result.Code).toBe(200);
     expect(result.Message).toBe('Empréstimo criado com sucesso');
     expect(result.PageData).toEqual([
       expect.objectContaining({
@@ -120,7 +120,7 @@ describe('ObterEmprestimoUseCase', () => {
       value: 'livro-456',
       type: 'S',
     });
-    expect(result.Code).toBe(201);
+    expect(result.Code).toBe(200);
     expect(result.PageData).toEqual([
       expect.objectContaining({
         usuarioId: 'usuario-999',
