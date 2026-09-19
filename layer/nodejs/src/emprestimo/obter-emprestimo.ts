@@ -83,19 +83,34 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
       return this.normalizeEmprestimo(data[0]);
     }
 
-    if (data && typeof data === 'object' && '0' in data) {
-      return this.normalizeEmprestimo((data as Record<string, unknown>)['0']);
+    if (data && typeof data === 'object') {
+      const record = data as Record<string, unknown>;
+      const indexedValue = record['0'];
+
+      if (indexedValue && typeof indexedValue === 'object') {
+        return this.normalizeEmprestimo(indexedValue);
+      }
+
+      const normalizedData = Object.fromEntries(
+        Object.entries(record).filter(([key]) => key !== 'toJSONString' && key !== '0')
+      );
+
+      return normalizedData as unknown as EmprestimoDTO;
     }
 
-    const normalizedData = (data ?? {}) as Record<string, unknown>;
-    return Object.fromEntries(
-      Object.entries(normalizedData).filter(([key]) => key !== 'toJSONString')
-    ) as unknown as EmprestimoDTO;
+    return (data ?? {}) as EmprestimoDTO;
   }
 
   private stripInternalMethods(data: EmprestimoDTO): EmprestimoDTO {
+    if (data && typeof data === 'object' && '0' in data) {
+      const indexedValue = (data as Record<string, unknown>)['0'];
+      if (indexedValue && typeof indexedValue === 'object') {
+        return this.stripInternalMethods(indexedValue as EmprestimoDTO);
+      }
+    }
+
     return Object.fromEntries(
-      Object.entries(data).filter(([key]) => key !== 'toJSONString')
+      Object.entries(data).filter(([key]) => key !== 'toJSONString' && key !== '0')
     ) as unknown as EmprestimoDTO;
   }
 }
