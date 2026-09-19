@@ -139,7 +139,7 @@ describe('ObterEmprestimoUseCase', () => {
     };
 
     repoMock.getData.mockResolvedValueOnce({
-      data: [{ 0: emprestimo }],
+      data: [emprestimo],
       currentPage: 1,
       totalPages: 1,
       totalDocuments: 1,
