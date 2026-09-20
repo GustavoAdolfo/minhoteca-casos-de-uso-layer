@@ -8,6 +8,12 @@ import {
 import { APIGatewayEvent } from 'aws-lambda/trigger/api-gateway-proxy';
 import { createResult } from '../util';
 
+// EmprestimoDTO enriquecido com os dados do livro consultado no repositório de livros
+type EmprestimoComLivro = Omit<EmprestimoDTO, 'toJSONString'> & {
+  livro?: unknown;
+  toJSONString?: () => string;
+};
+
 export class ObterEmprestimoUseCase implements UseCaseInterface {
   private _tabelaEmprestimoUsuario: string;
   private _tabelaEmprestimoLivros: string;
@@ -41,7 +47,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         throw new Error('Nenhum identificador de usuário ou livro fornecido.');
       }
 
-      let resultEmprestimo: EmprestimoDTO[] = [];
+      let resultEmprestimo: EmprestimoComLivro[] = [];
 
       if (usuarioId) {
         const resultEmprestimoUsuario: ResultType = await this._repository.getData(
@@ -66,7 +72,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
                 const mappedItem = {
                   ...item,
                   livro: livro?.data?.[0] ?? null,
-                } as EmprestimoDTO;
+                } as EmprestimoComLivro;
 
                 mappedItem.toJSONString = () => JSON.stringify(mappedItem);
                 return mappedItem;
@@ -97,7 +103,11 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         }
       }
 
-      return createResult(resultEmprestimo, 200, 'Empréstimo criado com sucesso');
+      return createResult(
+        resultEmprestimo as unknown as EmprestimoDTO[],
+        200,
+        'Empréstimo criado com sucesso'
+      );
     } catch (error) {
       if (error instanceof Error) {
         const message = error.message.trim();
