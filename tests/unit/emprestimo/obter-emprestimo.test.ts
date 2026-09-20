@@ -140,12 +140,82 @@ describe('ObterEmprestimoUseCase', () => {
         usuarioId: 'usuario-999',
         livroId: 'livro-456',
         situacao: 'PENDENTE',
-        livro: expect.objectContaining({
-          id: 'livro-456',
-          titulo: 'Livro 456',
-        }),
+        livro: [
+          expect.objectContaining({
+            id: 'livro-456',
+            titulo: 'Livro 456',
+          }),
+        ],
       }),
     ]);
+  });
+
+  it('deve obter o empréstimo pelo usuarioId e enriquecer o resultado com os dados do livro', async () => {
+    repoMock.getData.mockResolvedValueOnce(
+      createResult([
+        {
+          usuarioId: 'usuario-321',
+          livroId: 'livro-789',
+          situacao: 'ATIVO',
+          solicitacaoDataHora: '2026-09-14T09:00:00.000Z',
+        },
+      ])
+    );
+
+    livroRepoMock.findByMinhotecaId.mockResolvedValueOnce(
+      createResult([
+        {
+          id: 'livro-789',
+          titulo: 'Livro 789',
+        },
+      ])
+    );
+
+    const useCase = new ObterEmprestimoUseCase(repoMock, livroRepoMock);
+    const event = createEvent({ usuarioId: 'usuario-321' });
+
+    const result = await useCase.execute(event, 'execucao-789');
+
+    expect(livroRepoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-789');
+    expect(result.Code).toBe(200);
+    expect(result.PageData).toEqual([
+      expect.objectContaining({
+        usuarioId: 'usuario-321',
+        livroId: 'livro-789',
+        situacao: 'ATIVO',
+        livro: [
+          expect.objectContaining({
+            id: 'livro-789',
+            titulo: 'Livro 789',
+          }),
+        ],
+      }),
+    ]);
+  });
+
+  it('deve retornar lista vazia quando a consulta ao usuário não possuir dados', async () => {
+    repoMock.getData.mockResolvedValueOnce(createResult(undefined));
+
+    const useCase = new ObterEmprestimoUseCase(repoMock);
+    const result = await useCase.execute(createEvent({ usuarioId: 'sem-dados' }));
+
+    expect(result.PageData).toEqual([]);
+  });
+
+  it('deve remover métodos internos quando o item aninhado estiver indexado por 0', () => {
+    const useCase = new ObterEmprestimoUseCase(repoMock) as unknown as {
+      stripInternalMethods: (data: unknown) => unknown;
+    };
+    const nested = {
+      usuarioId: 'usuario-nested',
+      livroId: 'livro-nested',
+      situacao: 'ATIVO',
+      solicitacaoDataHora: '2026-09-14T10:00:00.000Z',
+    };
+
+    const result = useCase.stripInternalMethods({ '0': nested });
+
+    expect(result).toEqual(nested);
   });
 
   it('deve desempacotar o empréstimo quando o repositório retornar um objeto indexado por 0', async () => {
