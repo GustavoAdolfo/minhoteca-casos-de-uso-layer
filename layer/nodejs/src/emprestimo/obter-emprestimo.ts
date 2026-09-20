@@ -69,6 +69,11 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
                   this._tabelaLivros,
                   item.livroId
                 );
+                this.logService.info(
+                  'Resultado da consulta do livro associado',
+                  { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
+                  { livro }
+                );
                 const mappedItem = {
                   ...item,
                   livro: livro?.data?.[0] ?? null,
@@ -96,9 +101,19 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         if (dataResult.length > 0) {
           resultEmprestimo.push(...dataResult.map((item) => this.stripInternalMethods(item)));
 
-          const livro = await this._livroRepository?.findByMinhotecaId(this._tabelaLivros, livroId);
-          for (const item of resultEmprestimo) {
-            item.livro = livro?.data?.[0] ?? null;
+          if (this._livroRepository) {
+            const livro = await this._livroRepository?.findByMinhotecaId(
+              this._tabelaLivros,
+              livroId
+            );
+            this.logService.info(
+              'Resultado da consulta do livro associado',
+              { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
+              { livro }
+            );
+            for (const item of resultEmprestimo) {
+              item.livro = livro?.data?.[0] ?? null;
+            }
           }
         }
       }
