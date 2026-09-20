@@ -76,7 +76,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
                 );
                 const mappedItem = {
                   ...item,
-                  livro: livro?.data?.[0] ?? null,
+                  livro: livro?.data ?? null,
                 } as EmprestimoComLivro;
 
                 mappedItem.toJSONString = () => JSON.stringify(mappedItem);
@@ -112,7 +112,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
               { livro }
             );
             for (const item of resultEmprestimo) {
-              item.livro = livro?.data?.[0] ?? null;
+              item.livro = livro?.data ?? null;
             }
           }
         }
