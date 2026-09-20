@@ -69,6 +69,11 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
                   this._tabelaLivros,
                   item.livroId
                 );
+                this.logService.info(
+                  'Resultado da consulta do livro associado',
+                  { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
+                  { livro }
+                );
                 const mappedItem = {
                   ...item,
                   livro: livro?.data?.[0] ?? null,
@@ -100,6 +105,11 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
             const livro = await this._livroRepository?.findByMinhotecaId(
               this._tabelaLivros,
               livroId
+            );
+            this.logService.info(
+              'Resultado da consulta do livro associado',
+              { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
+              { livro }
             );
             for (const item of resultEmprestimo) {
               item.livro = livro?.data?.[0] ?? null;
