@@ -96,9 +96,14 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
         if (dataResult.length > 0) {
           resultEmprestimo.push(...dataResult.map((item) => this.stripInternalMethods(item)));
 
-          const livro = await this._livroRepository?.findByMinhotecaId(this._tabelaLivros, livroId);
-          for (const item of resultEmprestimo) {
-            item.livro = livro?.data?.[0] ?? null;
+          if (this._livroRepository) {
+            const livro = await this._livroRepository?.findByMinhotecaId(
+              this._tabelaLivros,
+              livroId
+            );
+            for (const item of resultEmprestimo) {
+              item.livro = livro?.data?.[0] ?? null;
+            }
           }
         }
       }
