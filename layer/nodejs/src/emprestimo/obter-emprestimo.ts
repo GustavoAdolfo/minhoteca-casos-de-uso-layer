@@ -36,7 +36,10 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
       { data }
     );
     try {
-      const { usuarioId, livroId } = { ...data.queryStringParameters };
+      const usuarioId =
+        data.queryStringParameters?.usuarioId ?? data.pathParameters?.usuarioId ?? null;
+      const livroId = data.queryStringParameters?.livroId ?? data.pathParameters?.livroId ?? null;
+
       this.logService.info(
         'Dados recebidos para gravação',
         { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
@@ -121,7 +124,7 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
       return createResult(
         resultEmprestimo as unknown as EmprestimoDTO[],
         200,
-        'Empréstimo criado com sucesso'
+        'Empréstimos obtidos com sucesso'
       );
     } catch (error) {
       if (error instanceof Error) {
@@ -132,12 +135,12 @@ export class ObterEmprestimoUseCase implements UseCaseInterface {
       }
 
       this.logService.error(
-        'Erro ao criar empréstimo:',
+        'Erro ao obter empréstimos:',
         { label: 'ObterEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
         error as Error,
         { data }
       );
-      throw new Error('Falha ao criar empréstimo.');
+      throw new Error('Falha ao obter empréstimos.');
     }
   }
 
