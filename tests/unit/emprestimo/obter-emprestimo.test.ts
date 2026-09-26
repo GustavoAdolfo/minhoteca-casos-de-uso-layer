@@ -92,7 +92,7 @@ describe('ObterEmprestimoUseCase', () => {
       type: 'S',
     });
     expect(result.Code).toBe(200);
-    expect(result.Message).toBe('Empréstimo criado com sucesso');
+    expect(result.Message).toBe('Empréstimos obtidos com sucesso');
     expect(result.PageData).toEqual([
       expect.objectContaining({
         usuarioId: 'usuario-123',
@@ -307,7 +307,7 @@ describe('ObterEmprestimoUseCase', () => {
     const event = createEvent({ usuarioId: 'usuario-erro' });
 
     await expect(useCase.execute(event, 'execucao-erro')).rejects.toThrow(
-      'Falha ao criar empréstimo.'
+      'Falha ao obter empréstimos.'
     );
     expect(getLogServiceErrorMock()).toHaveBeenCalled();
   });
