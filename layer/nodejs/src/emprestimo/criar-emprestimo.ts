@@ -1,4 +1,4 @@
-import { RepositoryInterface } from '@gustavoadolfo/minhoteca-adapter-layer';
+import { RepositoryInterface, SNSFacade } from '@gustavoadolfo/minhoteca-adapter-layer';
 import {
   UseCaseInterface,
   PageDataType,
@@ -11,11 +11,13 @@ import { createResult } from '../util';
 export class CriarEmprestimoUseCase implements UseCaseInterface {
   private _tabelaEmprestimoUsuario: string;
   private _tabelaEmprestimoLivros: string;
+  private _publisherAlertas: string | undefined;
   private logService = new LogService('CriarEmprestimoUseCase');
 
   constructor(private _repository: RepositoryInterface) {
     this._tabelaEmprestimoUsuario = process.env.TABELA_EMPRESTIMO_USUARIO ?? 'EmprestimoUsuario';
     this._tabelaEmprestimoLivros = process.env.TABELA_EMPRESTIMO_LIVROS ?? 'EmprestimoLivros';
+    this._publisherAlertas = process.env.SNS_ALERTAS;
   }
 
   async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
@@ -54,6 +56,28 @@ export class CriarEmprestimoUseCase implements UseCaseInterface {
         { label: 'CriarEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
         { emprestimo }
       );
+
+      try {
+        if (this._publisherAlertas) {
+          const snsFacade = new SNSFacade();
+          await snsFacade.sendMessage(
+            this._publisherAlertas,
+            JSON.stringify({ message: `Novo empréstimo criado: ${emprestimo}` })
+          );
+          this.logService.info(
+            'Alerta de novo empréstimo enviado com sucesso',
+            { label: 'CriarEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
+            { emprestimo }
+          );
+        }
+      } catch (error) {
+        this.logService.error(
+          'Erro ao enviar alerta de novo empréstimo:',
+          { label: 'CriarEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
+          error as Error,
+          { emprestimo }
+        );
+      }
 
       return createResult([emprestimo], 201, 'Empréstimo criado com sucesso');
     } catch (error) {

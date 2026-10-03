@@ -34,7 +34,8 @@ export class ObterLivroUseCase implements UseCaseInterface {
       { data }
     );
     try {
-      const livroId = data.pathParameters?.id ?? data.queryStringParameters?.id;
+      const livroId =
+        data.pathParameters?.livroId ?? data.pathParameters?.id ?? data.queryStringParameters?.id;
       if (livroId) {
         const result: ResultType = await this._repository.findByMinhotecaId(
           this._tabelaLivros,
