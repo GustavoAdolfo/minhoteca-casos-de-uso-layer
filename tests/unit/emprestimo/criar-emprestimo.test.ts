@@ -1,7 +1,11 @@
-import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
+import { RepositoryInterface, ResultType, SNSFacade } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { LogService } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda/trigger/api-gateway-proxy';
 import { CriarEmprestimoUseCase } from '../../../layer/nodejs/src/emprestimo/criar-emprestimo';
+
+jest.mock('@gustavoadolfo/minhoteca-adapter-layer', () => ({
+  SNSFacade: jest.fn(),
+}));
 
 jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
   const actual = jest.requireActual('@gustavoadolfo/minhoteca-core-layer');
@@ -17,6 +21,7 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 
 describe('CriarEmprestimoUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
+  let snsSendMessageMock: jest.Mock;
 
   const emprestimoPayload = {
     usuarioId: 'usuario-123',
@@ -57,6 +62,11 @@ describe('CriarEmprestimoUseCase', () => {
       hasPrevPage: false,
       limit: 10,
     } as ResultType);
+
+    snsSendMessageMock = jest.fn().mockResolvedValue({ MessageId: 'mensagem-123' });
+    (SNSFacade as unknown as jest.Mock).mockImplementation(() => ({
+      sendMessage: snsSendMessageMock,
+    }));
   });
 
   const getLogServiceErrorMock = (): jest.Mock => {
@@ -154,6 +164,74 @@ describe('CriarEmprestimoUseCase', () => {
     await expect(useCase.execute(createEvent(), 'execucao-erro')).rejects.toThrow(
       'Falha ao criar empréstimo.'
     );
+    expect(getLogServiceErrorMock()).toHaveBeenCalled();
+  });
+
+  it('deve enviar alerta SNS quando SNS_ALERTAS estiver configurado', async () => {
+    const originalSns = process.env.SNS_ALERTAS;
+    process.env.SNS_ALERTAS = 'arn:aws:sns:us-east-1:123456789012:alertas';
+
+    try {
+      const useCase = new CriarEmprestimoUseCase(repoMock);
+      const result = await useCase.execute(createEvent(), 'execucao-sns');
+
+      expect(repoMock.saveData).toHaveBeenCalledTimes(2);
+      expect(snsSendMessageMock).toHaveBeenCalledWith(
+        'arn:aws:sns:us-east-1:123456789012:alertas',
+        expect.stringContaining('Novo empréstimo criado:')
+      );
+      expect(result.Code).toBe(201);
+      expect(result.Message).toBe('Empréstimo criado com sucesso');
+    } finally {
+      if (originalSns === undefined) {
+        delete process.env.SNS_ALERTAS;
+      } else {
+        process.env.SNS_ALERTAS = originalSns;
+      }
+    }
+  });
+
+  it('não deve falhar a criação quando o envio do alerta SNS falhar', async () => {
+    const originalSns = process.env.SNS_ALERTAS;
+    process.env.SNS_ALERTAS = 'arn:aws:sns:us-east-1:123456789012:alertas';
+    snsSendMessageMock.mockRejectedValueOnce(new Error('SNS indisponível'));
+
+    try {
+      const useCase = new CriarEmprestimoUseCase(repoMock);
+      const result = await useCase.execute(createEvent(), 'execucao-sns-erro');
+
+      expect(snsSendMessageMock).toHaveBeenCalled();
+      expect(getLogServiceErrorMock()).toHaveBeenCalled();
+      expect(result.Code).toBe(201);
+      expect(result.Message).toBe('Empréstimo criado com sucesso');
+    } finally {
+      if (originalSns === undefined) {
+        delete process.env.SNS_ALERTAS;
+      } else {
+        process.env.SNS_ALERTAS = originalSns;
+      }
+    }
+  });
+
+  it('deve criar o empréstimo com payload vazio quando o body for nulo', async () => {
+    const useCase = new CriarEmprestimoUseCase(repoMock);
+
+    const result = await useCase.execute(createEvent(null), 'execucao-body-nulo');
+
+    expect(repoMock.saveData).toHaveBeenNthCalledWith(1, 'EmprestimoUsuario', {});
+    expect(repoMock.saveData).toHaveBeenNthCalledWith(2, 'EmprestimoLivros', {});
+    expect(result.Code).toBe(201);
+    expect(result.Message).toBe('Empréstimo criado com sucesso');
+  });
+
+  it('deve lançar erro genérico quando o body contiver JSON inválido', async () => {
+    const event = { body: '{json-invalido' } as unknown as APIGatewayEvent;
+    const useCase = new CriarEmprestimoUseCase(repoMock);
+
+    await expect(useCase.execute(event, 'execucao-json-invalido')).rejects.toThrow(
+      'Falha ao criar empréstimo.'
+    );
+    expect(repoMock.saveData).not.toHaveBeenCalled();
     expect(getLogServiceErrorMock()).toHaveBeenCalled();
   });
 });

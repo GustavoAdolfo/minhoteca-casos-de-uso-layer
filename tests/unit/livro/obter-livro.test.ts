@@ -86,6 +86,19 @@ describe('ObterLivroUseCase', () => {
     expect(livroResult?.autor).toHaveProperty('nome', 'Autor de Teste');
   });
 
+  it('deve obter um livro usando o parâmetro livroId do caminho', async () => {
+    repoMock.findByMinhotecaId
+      .mockResolvedValueOnce({ data: livroMockData } as ResultType)
+      .mockResolvedValueOnce({ data: autorMockData } as ResultType);
+
+    const useCase = new ObterLivroUseCase(repoMock);
+    const event = createEvent({ livroId: 'livro-456' });
+
+    await useCase.execute(event, '12345');
+
+    expect(repoMock.findByMinhotecaId).toHaveBeenCalledWith('Livros', 'livro-456');
+  });
+
   it('deve obter um livro mesmo que o autor não seja encontrado', async () => {
     repoMock.findByMinhotecaId
       .mockResolvedValueOnce({ data: livroMockData } as ResultType)
