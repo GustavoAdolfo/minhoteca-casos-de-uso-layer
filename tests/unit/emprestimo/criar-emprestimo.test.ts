@@ -123,7 +123,7 @@ describe('CriarEmprestimoUseCase', () => {
 
     try {
       const useCase = new CriarEmprestimoUseCase(repoMock);
-      await useCase.execute(createEvent());
+      await useCase.execute(createEvent(), 'execucao-configuracao');
 
       expect(repoMock.saveData).toHaveBeenNthCalledWith(1, 'TabelaEmprestimoUsuarioMock', {
         usuarioId: 'usuario-123',
