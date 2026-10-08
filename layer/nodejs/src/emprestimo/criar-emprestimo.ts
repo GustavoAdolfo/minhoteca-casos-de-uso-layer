@@ -20,7 +20,7 @@ export class CriarEmprestimoUseCase implements UseCaseInterface {
     this._publisherAlertas = process.env.SNS_ALERTAS;
   }
 
-  async execute(data: APIGatewayEvent, idExecucao?: string): Promise<PageDataType> {
+  async execute(data: APIGatewayEvent, idExecucao: string): Promise<PageDataType> {
     this.logService.info(
       'Início a execução do caso de uso CriarEmprestimoUseCase',
       { label: 'CriarEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
@@ -59,7 +59,7 @@ export class CriarEmprestimoUseCase implements UseCaseInterface {
 
       try {
         if (this._publisherAlertas) {
-          const snsFacade = new SNSFacade();
+          const snsFacade = new SNSFacade(idExecucao);
           await snsFacade.sendMessage(
             this._publisherAlertas,
             JSON.stringify({ message: `Novo empréstimo criado: ${emprestimo}` })
