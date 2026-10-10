@@ -75,7 +75,7 @@ describe('ObterEmprestimoUseCase', () => {
         {
           usuarioId: 'usuario-123',
           livroId: 'livro-456',
-          situacao: 'ATIVO',
+          situacao: 'EMPRESTADO',
           solicitacaoDataHora: '2026-09-13T08:00:00.000Z',
         },
       ])
@@ -97,7 +97,7 @@ describe('ObterEmprestimoUseCase', () => {
       expect.objectContaining({
         usuarioId: 'usuario-123',
         livroId: 'livro-456',
-        situacao: 'ATIVO',
+        situacao: 'EMPRESTADO',
       }),
     ]);
   });
@@ -156,7 +156,7 @@ describe('ObterEmprestimoUseCase', () => {
         {
           usuarioId: 'usuario-321',
           livroId: 'livro-789',
-          situacao: 'ATIVO',
+          situacao: 'EMPRESTADO',
           solicitacaoDataHora: '2026-09-14T09:00:00.000Z',
         },
       ])
@@ -182,7 +182,7 @@ describe('ObterEmprestimoUseCase', () => {
       expect.objectContaining({
         usuarioId: 'usuario-321',
         livroId: 'livro-789',
-        situacao: 'ATIVO',
+        situacao: 'EMPRESTADO',
         livro: [
           expect.objectContaining({
             id: 'livro-789',
@@ -209,7 +209,7 @@ describe('ObterEmprestimoUseCase', () => {
     const nested = {
       usuarioId: 'usuario-nested',
       livroId: 'livro-nested',
-      situacao: 'ATIVO',
+      situacao: 'EMPRESTADO',
       solicitacaoDataHora: '2026-09-14T10:00:00.000Z',
     };
 
