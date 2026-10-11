@@ -1,7 +1,7 @@
 import { CriarLivroUseCase } from '../../../layer/nodejs/src/livro/criar-livro';
 import { RepositoryInterface, ResultType } from '@gustavoadolfo/minhoteca-adapter-layer';
 import { APIGatewayEvent } from 'aws-lambda';
-import { LivroAdapter } from '@gustavoadolfo/minhoteca-core-layer';
+import { LivroAdapter, StatusLivro } from '@gustavoadolfo/minhoteca-core-layer';
 
 // Realizamos o mock parcial da camada core para isolar os testes do UseCase
 jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
@@ -31,7 +31,7 @@ describe('CriarLivroUseCase', () => {
     anoPublicacao: 2019,
     sinopse:
       "Quando aquela que o Batman um dia amou, Talia, filha de um dos maiores inimidos do Cavaleiro das Trevas, Ra''s Al Ghul, reaparece com um exército de Morcegos-Humanos, ela tem uma outra surpresa para o herói - seu filho. Damian Wayne foi criado com a brutal Liga dos Assassions, e seu ímpeto violento e agressivo ameaça demolir o mundo do Homem-Morcego.",
-    status: 'DISPONIVEL',
+    situacao: StatusLivro.DISPONIVEL,
     revisar: false,
     autor: undefined,
     editora: undefined,
@@ -48,7 +48,7 @@ describe('CriarLivroUseCase', () => {
     editoraId: livroMockData.editoraId,
     anoPublicacao: livroMockData.anoPublicacao,
     sinopse: livroMockData.sinopse,
-    status: livroMockData.status,
+    situacao: livroMockData.situacao,
     revisar: livroMockData.revisar,
     idioma: livroMockData.idioma,
     imagemCapaUrl: livroMockData.imagemCapaUrl,
@@ -124,7 +124,7 @@ describe('CriarLivroUseCase', () => {
           editoraId: livroCreateBody.editoraId,
           anoPublicacao: livroCreateBody.anoPublicacao,
           sinopse: livroCreateBody.sinopse,
-          status: livroCreateBody.status,
+          situacao: livroCreateBody.situacao,
           id: expect.any(String),
           criadoEm: expect.any(String),
           atualizadoEm: expect.any(String),
@@ -175,7 +175,7 @@ describe('CriarLivroUseCase', () => {
           editoraId: livroCreateBody.editoraId,
           anoPublicacao: livroCreateBody.anoPublicacao,
           sinopse: livroCreateBody.sinopse,
-          status: livroCreateBody.status,
+          situacao: livroCreateBody.situacao,
           id: expect.any(String),
           criadoEm: expect.any(String),
           atualizadoEm: expect.any(String),
