@@ -62,6 +62,25 @@ minhoteca-casos-de-uso-layer/
 
 ## 🤝 Como Contribuir
 
+### Testes da listagem de livros
+
+Os testes de `tests/unit/livro/listar-livro.test.ts` utilizam as entidades,
+ValueObjects e adapters reais da core layer; somente o repositório e o serviço
+de logs são simulados. Cobrem os formatos persistidos de ISBN, páginas com
+formatos mistos, validações e logs de erro, associação de autores e paginação.
+
+A dependência publicada da core layer deve conter a conversão centralizada de
+ISBN (versão 1.0.74 ou superior). Instale as versões registradas no lockfile
+antes de executar os testes:
+
+```bash
+npm ci
+npm test -- --runInBand --runTestsByPath tests/unit/livro/listar-livro.test.ts
+```
+
+Não use um `moduleNameMapper` para mascarar uma dependência instalada
+desatualizada: os testes devem validar a mesma core utilizada no build.
+
 Contribuições são muito bem-vindas e cruciais para a evolução da Minhoteca!
 
 Para entender o nosso fluxo de submissão de código (_pull requests_), padrões de commits (_Conventional Commits_), convenções do repositório e processo de execução de testes locais, acesse o nosso guia completo em **CONTRIBUTING.md**.
