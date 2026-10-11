@@ -70,6 +70,38 @@ describe('ListarLivroUseCase', () => {
       queryStringParameters,
     }) as unknown as APIGatewayEvent;
 
+  it.each([
+    ['9788556710239', '9788556710239'],
+    [{ value: '9786587817644' }, '9786587817644'],
+    [9788535900736, '9788535900736'],
+  ])('deve listar ISBN persistido %p como string', async (isbn, esperado) => {
+    repoMock.getAll.mockResolvedValueOnce({
+      data: [{ ...livroMockData, isbn }],
+      limit: 10,
+      currentPage: 1,
+      totalPages: 1,
+      totalDocuments: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
+    repoMock.getListByMinhotecaIds.mockResolvedValueOnce({
+      data: [],
+      limit: 10,
+      currentPage: 1,
+      totalPages: 0,
+      totalDocuments: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
+
+    const result = await new ListarLivroUseCase(repoMock).execute(createEvent());
+
+    expect(result.Code).toBe(200);
+    expect(result.PageData).toEqual([
+      expect.objectContaining({ id: livroMockData.id, isbn: esperado }),
+    ]);
+  });
+
   it('deve listar livros com paginação padrão quando queryStringParameters é null', async () => {
     const mockResult: ResultType = {
       data: [livroMockData],
