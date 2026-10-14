@@ -1,10 +1,16 @@
-import { RepositoryInterface, ResultType, SNSFacade } from '@gustavoadolfo/minhoteca-adapter-layer';
+import {
+  RepositoryInterface,
+  ResultType,
+  SNSFacade,
+  SQSFacade,
+} from '@gustavoadolfo/minhoteca-adapter-layer';
 import { LogService } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda/trigger/api-gateway-proxy';
 import { CriarEmprestimoUseCase } from '../../../layer/nodejs/src/emprestimo/criar-emprestimo';
 
 jest.mock('@gustavoadolfo/minhoteca-adapter-layer', () => ({
   SNSFacade: jest.fn(),
+  SQSFacade: jest.fn(),
 }));
 
 jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
@@ -22,6 +28,7 @@ jest.mock('@gustavoadolfo/minhoteca-core-layer', () => {
 describe('CriarEmprestimoUseCase', () => {
   let repoMock: jest.Mocked<RepositoryInterface>;
   let snsSendMessageMock: jest.Mock;
+  let sqsSendMessageMock: jest.Mock;
 
   const emprestimoPayload = {
     usuarioId: 'usuario-123',
@@ -66,6 +73,10 @@ describe('CriarEmprestimoUseCase', () => {
     snsSendMessageMock = jest.fn().mockResolvedValue({ MessageId: 'mensagem-123' });
     (SNSFacade as unknown as jest.Mock).mockImplementation(() => ({
       sendMessage: snsSendMessageMock,
+    }));
+    sqsSendMessageMock = jest.fn().mockResolvedValue({ MessageId: 'mensagem-123' });
+    (SQSFacade as unknown as jest.Mock).mockImplementation(() => ({
+      sendMessage: sqsSendMessageMock,
     }));
   });
 
@@ -165,6 +176,60 @@ describe('CriarEmprestimoUseCase', () => {
       'Falha ao criar empréstimo.'
     );
     expect(getLogServiceErrorMock()).toHaveBeenCalled();
+  });
+
+  it('deve enviar mensagem para SQS quando a fila estiver configurada', async () => {
+    const originalQueue = process.env.SQS_ATUALIZAR_ACERVO;
+    process.env.SQS_ATUALIZAR_ACERVO = 'https://sqs.us-east-1.amazonaws.com/123456789012/acervo';
+
+    try {
+      const useCase = new CriarEmprestimoUseCase(repoMock);
+      const result = await useCase.execute(createEvent(), 'execucao-sqs');
+
+      expect(sqsSendMessageMock).toHaveBeenCalledWith(
+        'https://sqs.us-east-1.amazonaws.com/123456789012/acervo',
+        JSON.stringify(emprestimoPayload)
+      );
+      expect(result.Code).toBe(201);
+    } finally {
+      if (originalQueue === undefined) {
+        delete process.env.SQS_ATUALIZAR_ACERVO;
+      } else {
+        process.env.SQS_ATUALIZAR_ACERVO = originalQueue;
+      }
+    }
+  });
+
+  it('não deve falhar a criação quando o envio da mensagem SQS falhar', async () => {
+    sqsSendMessageMock.mockRejectedValueOnce(new Error('SQS indisponível'));
+
+    const useCase = new CriarEmprestimoUseCase(repoMock);
+    const result = await useCase.execute(createEvent(), 'execucao-sqs-erro');
+
+    expect(sqsSendMessageMock).toHaveBeenCalled();
+    expect(getLogServiceErrorMock()).toHaveBeenCalled();
+    expect(result.Code).toBe(201);
+    expect(result.Message).toBe('Empréstimo criado com sucesso');
+  });
+
+  it('deve criar o empréstimo sem incluir logId quando a execução não tiver identificador', async () => {
+    const originalQueue = process.env.SQS_ATUALIZAR_ACERVO;
+    delete process.env.SQS_ATUALIZAR_ACERVO;
+
+    try {
+      const useCase = new CriarEmprestimoUseCase(repoMock);
+      const result = await useCase.execute(createEvent(), '');
+
+      expect(SQSFacade).toHaveBeenCalledWith('');
+      expect(sqsSendMessageMock).toHaveBeenCalledWith('', JSON.stringify(emprestimoPayload));
+      expect(result.Code).toBe(201);
+    } finally {
+      if (originalQueue === undefined) {
+        delete process.env.SQS_ATUALIZAR_ACERVO;
+      } else {
+        process.env.SQS_ATUALIZAR_ACERVO = originalQueue;
+      }
+    }
   });
 
   it('deve enviar alerta SNS quando SNS_ALERTAS estiver configurado', async () => {
