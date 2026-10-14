@@ -1,4 +1,4 @@
-import { RepositoryInterface, SNSFacade } from '@gustavoadolfo/minhoteca-adapter-layer';
+import { RepositoryInterface, SNSFacade, SQSFacade } from '@gustavoadolfo/minhoteca-adapter-layer';
 import {
   UseCaseInterface,
   PageDataType,
@@ -56,6 +56,26 @@ export class CriarEmprestimoUseCase implements UseCaseInterface {
         { label: 'CriarEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
         { emprestimo }
       );
+
+      try {
+        const sqsFacade = new SQSFacade(idExecucao);
+        await sqsFacade.sendMessage(
+          process.env.SQS_ATUALIZAR_ACERVO ?? '',
+          JSON.stringify(emprestimo)
+        );
+        this.logService.info(
+          'Mensagem de novo empréstimo enviada para SQS com sucesso',
+          { label: 'CriarEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
+          { emprestimo }
+        );
+      } catch (error) {
+        this.logService.error(
+          'Erro ao enviar mensagem de novo empréstimo para SQS:',
+          { label: 'CriarEmprestimoUseCase', ...(idExecucao && { logId: idExecucao }) },
+          error as Error,
+          { emprestimo }
+        );
+      }
 
       try {
         if (this._publisherAlertas) {
