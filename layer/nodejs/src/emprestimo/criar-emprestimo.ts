@@ -4,6 +4,7 @@ import {
   PageDataType,
   LogService,
   EmprestimoDTO,
+  StatusLivro,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda/trigger/api-gateway-proxy';
 import { createResult } from '../util';
@@ -61,7 +62,7 @@ export class CriarEmprestimoUseCase implements UseCaseInterface {
         const sqsFacade = new SQSFacade(idExecucao);
         await sqsFacade.sendMessage(
           process.env.SQS_ATUALIZAR_ACERVO ?? '',
-          JSON.stringify(emprestimo)
+          JSON.stringify({ ...emprestimo, situacao: StatusLivro.PENDENTE })
         );
         this.logService.info(
           'Mensagem de novo empréstimo enviada para SQS com sucesso',
