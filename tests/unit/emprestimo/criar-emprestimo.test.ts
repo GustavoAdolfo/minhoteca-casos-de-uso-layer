@@ -178,6 +178,49 @@ describe('CriarEmprestimoUseCase', () => {
     expect(getLogServiceErrorMock()).toHaveBeenCalled();
   });
 
+  it('não deve enviar notificações se a gravação na segunda tabela falhar', async () => {
+    const originalQueue = process.env.SQS_ATUALIZAR_ACERVO;
+    const originalSns = process.env.SNS_ALERTAS;
+    process.env.SQS_ATUALIZAR_ACERVO = 'https://sqs.us-east-1.amazonaws.com/123456789012/acervo';
+    process.env.SNS_ALERTAS = 'arn:aws:sns:us-east-1:123456789012:alertas';
+    repoMock.saveData
+      .mockResolvedValueOnce({
+        data: null,
+        currentPage: 1,
+        totalPages: 1,
+        totalDocuments: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+        limit: 10,
+      } as ResultType)
+      .mockRejectedValueOnce(new Error('Erro ao salvar empréstimo do livro'));
+
+    try {
+      const useCase = new CriarEmprestimoUseCase(repoMock);
+
+      await expect(useCase.execute(createEvent(), 'execucao-segunda-tabela-erro')).rejects.toThrow(
+        'Falha ao criar empréstimo.'
+      );
+
+      expect(repoMock.saveData).toHaveBeenCalledTimes(2);
+      expect(sqsSendMessageMock).not.toHaveBeenCalled();
+      expect(snsSendMessageMock).not.toHaveBeenCalled();
+      expect(getLogServiceErrorMock()).toHaveBeenCalled();
+    } finally {
+      if (originalQueue === undefined) {
+        delete process.env.SQS_ATUALIZAR_ACERVO;
+      } else {
+        process.env.SQS_ATUALIZAR_ACERVO = originalQueue;
+      }
+
+      if (originalSns === undefined) {
+        delete process.env.SNS_ALERTAS;
+      } else {
+        process.env.SNS_ALERTAS = originalSns;
+      }
+    }
+  });
+
   it('deve enviar mensagem para SQS quando a fila estiver configurada', async () => {
     const originalQueue = process.env.SQS_ATUALIZAR_ACERVO;
     process.env.SQS_ATUALIZAR_ACERVO = 'https://sqs.us-east-1.amazonaws.com/123456789012/acervo';
@@ -247,6 +290,26 @@ describe('CriarEmprestimoUseCase', () => {
       );
       expect(result.Code).toBe(201);
       expect(result.Message).toBe('Empréstimo criado com sucesso');
+    } finally {
+      if (originalSns === undefined) {
+        delete process.env.SNS_ALERTAS;
+      } else {
+        process.env.SNS_ALERTAS = originalSns;
+      }
+    }
+  });
+
+  it('não deve enviar alerta SNS quando SNS_ALERTAS não estiver configurado', async () => {
+    const originalSns = process.env.SNS_ALERTAS;
+    delete process.env.SNS_ALERTAS;
+
+    try {
+      const useCase = new CriarEmprestimoUseCase(repoMock);
+      const result = await useCase.execute(createEvent(), 'execucao-sns-desabilitado');
+
+      expect(result.Code).toBe(201);
+      expect(SNSFacade).not.toHaveBeenCalled();
+      expect(snsSendMessageMock).not.toHaveBeenCalled();
     } finally {
       if (originalSns === undefined) {
         delete process.env.SNS_ALERTAS;
