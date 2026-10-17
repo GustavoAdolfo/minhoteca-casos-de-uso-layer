@@ -4,6 +4,7 @@ import {
   PageDataType,
   LogService,
   EmprestimoDTO,
+  StatusLivro,
 } from '@gustavoadolfo/minhoteca-core-layer';
 import { APIGatewayEvent } from 'aws-lambda/trigger/api-gateway-proxy';
 import { createResult } from '../util';
