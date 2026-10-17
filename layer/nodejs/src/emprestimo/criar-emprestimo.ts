@@ -62,7 +62,7 @@ export class CriarEmprestimoUseCase implements UseCaseInterface {
         const sqsFacade = new SQSFacade(idExecucao);
         await sqsFacade.sendMessage(
           process.env.SQS_ATUALIZAR_ACERVO ?? '',
-          JSON.stringify({ ...emprestimo, situacao: StatusLivro.PENDENTE })
+          JSON.stringify(emprestimo)
         );
         this.logService.info(
           'Mensagem de novo empréstimo enviada para SQS com sucesso',
